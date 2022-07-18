@@ -1,0 +1,14 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.9
+  - r::r-base=4.2.0
+  - r::r-tidyverse=1.3.1
+  - eigensoft=7.2.1
+  - numpy
+  - matplotlib
+  - seaborn
+  - pandas
+  - sgkit=0.5.0
