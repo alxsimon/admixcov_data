@@ -6,4 +6,4 @@ include: "workflow/rules/data_prep.smk"
 
 rule all:
 	input:
-		rules.data_filter_merge_2.output
+		rules.convert_plink2sgkit.output

@@ -12,3 +12,4 @@ dependencies:
   - seaborn
   - pandas
   - sgkit=0.5.0
+  - plink=1.90
