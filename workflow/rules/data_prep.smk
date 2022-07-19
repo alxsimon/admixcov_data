@@ -33,7 +33,7 @@ rule download_Patterson2022:
 
 rule data_filter_merge_1:
 	input: 
-		"data/Patterson2022_TableS3.tsv",
+		"data/list_samples_full_Patterson2022.txt",
 		multiext("data/v50.0_1240k_public", '.geno', '.snp', '.ind'),
 		multiext("data/brit", '.geno', '.snp', '.ind'),
 	output:

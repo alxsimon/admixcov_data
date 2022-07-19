@@ -2,10 +2,10 @@ library(tidyverse)
 
 aadr <- read_table("data/v50.0_1240k_public.ind",
 				   col_names = c("sample", "sex", "pop"), col_types = 'ccc')
-TS3 <- read_tsv(snakemake@input[[1]], col_types = cols())
+samples_list <- read_lines(snakemake@input[[1]])
 
 aadr_filt <- aadr %>% 
-	mutate(pop = ifelse(aadr$sample %in% TS3$`Version ID`, pop, "Ignore"))
+	mutate(pop = ifelse(aadr$sample %in% samples_list, pop, "Ignore"))
 
 write_tsv(aadr_filt, "data/v50.0_1240k_public_filtered.ind", col_names = F)
 
