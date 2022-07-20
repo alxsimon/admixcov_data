@@ -16,7 +16,7 @@ meta_S5 = pd.read_csv(file_meta_S5, sep="\t")
 
 meta = (
 	pd.concat([meta_S3, meta_S5], join='outer', ignore_index=True)
-	.drop_duplicates('Version ID', keep='last', ignore_index=True)
+	.drop_duplicates('Master ID', keep='last', ignore_index=True)
 )
 
 meta_sub = meta[np.isin(meta["Version ID"], ds.sample_id.values)].copy()
