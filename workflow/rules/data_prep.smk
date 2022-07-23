@@ -88,6 +88,7 @@ rule convert_plink2sgkit:
 	output:
 		zarr_store = directory("data/Patterson2022.zarr"),
 		meta_out = "data/Patterson2022_metadata.tsv",
+		out_ind = "data/Patterson2022.ind",
 	params:
 		path = lambda w, input: input[0].replace(".bed", ""),
 	conda: "../envs/analyses.yaml"

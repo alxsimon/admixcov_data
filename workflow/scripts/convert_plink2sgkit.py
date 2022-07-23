@@ -16,14 +16,19 @@ meta_S5 = pd.read_csv(file_meta_S5, sep="\t")
 
 meta = (
 	pd.concat([meta_S3, meta_S5], join='outer', ignore_index=True)
-	.drop_duplicates('Master ID', keep='last', ignore_index=True)
+	.drop_duplicates('Version ID', keep='last', ignore_index=True)
 )
 
 meta_sub = meta[np.isin(meta["Version ID"], ds.sample_id.values)].copy()
 
 meta_sub.index = meta_sub['Version ID']
 meta_sub = meta_sub.reindex(ds.sample_id.values)
-ds['group_id'] = xr.DataArray(meta_sub['Group ID'].to_numpy(dtype='str'), dims=['samples'])
+
+filt1_col = 'Filter 1: Filter 0 plus p>0.01 qpAdm 3-way or qpAdm 2-way'
+no_f1 = meta_sub[filt1_col].isna()
+meta_sub.loc[no_f1, filt1_col] = meta_sub[no_f1]['Group ID']
+
+ds['sample_group'] = xr.DataArray(meta_sub['Group ID'].to_numpy(dtype='str'), dims=['samples'])
 ds['sample_date_bp'] = xr.DataArray(
 	meta_sub['Date mean in BP [OxCal mu for a direct radiocarbon date, and average of range for a contextual date]'].to_numpy(),
 	dims=['samples'],
@@ -33,7 +38,11 @@ ds['sample_snp_hits_autosomes'] = xr.DataArray(
 	dims=['samples'],
 )
 ds['sample_filter_1'] = xr.DataArray(
-	meta_sub['Filter 1: Filter 0 plus p>0.01 qpAdm 3-way or qpAdm 2-way'].to_numpy(),
+	meta_sub[filt1_col].to_numpy(),
+	dims=['samples'],
+)
+ds['sample_filter_0'] = xr.DataArray(
+	meta_sub['Filter 0: >=30000 SNPs, PASS assessment, relevant period, not a first degree relative of higher coverage individuals)'].to_numpy(),
 	dims=['samples'],
 )
 ds['sample_admixture'] = xr.DataArray(
@@ -48,3 +57,9 @@ meta_sub.to_csv(
 	sep="\t",
 	index=False,
 )
+
+# Create ind file useful for smartpca
+ind = pd.DataFrame(meta_sub['Version ID'])
+ind['sex'] = 'U'
+ind['group'] = meta_sub[filt1_col]
+ind.to_csv(snakemake.output['out_ind'], sep="\t", index=False, header=False)
