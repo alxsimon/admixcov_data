@@ -10,3 +10,4 @@ rule all:
 		rules.convert_plink2sgkit.output,
 		rules.smartpca.output,
 		rules.smartpca_ref.output,
+		rules.prepare_maps.output,

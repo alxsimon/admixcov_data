@@ -94,3 +94,16 @@ rule convert_plink2sgkit:
 	conda: "../envs/analyses.yaml"
 	script:
 		"../scripts/convert_plink2sgkit.py"
+
+
+rule prepare_maps:
+	input:
+		bmap_files = expand('data/Murphy2021_Bvalues/CADD_bestfit/chr{num}.bmap.txt', num=range(1, 23)),
+		rmap_files = expand('data/Bherer2017_Refined_EUR_genetic_map_b37/sexavg_chr{num}.txt', num=range(1, 23)),
+		chr_len = 'data/hg19_chr_len.txt',
+	output:
+		bmap_out = 'data/Murphy2021_Bvalues_compiled.bmap.txt',
+		rmap_out = 'data/Bherer2017_Refined_EUR_genetic_map_sexavg.rmap.txt',
+	conda: "../envs/analyses.yaml"
+	script:
+		"../scripts/prepare_maps.py"
