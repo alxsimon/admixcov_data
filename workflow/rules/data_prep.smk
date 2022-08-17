@@ -80,22 +80,6 @@ rule data_filter_merge_2:
 		rm data/tmp_*
 		"""
 
-rule convert_plink2sgkit:
-	input:
-		multiext("data/Patterson2022", ".bed", ".bim", ".fam"),
-		metadata_S3 = "data/Patterson2022_TableS3.tsv",
-		metadata_S5 = "data/Patterson2022_TableS5_corrected.tsv",
-	output:
-		zarr_store = directory("data/Patterson2022.zarr"),
-		meta_out = "data/Patterson2022_metadata.tsv",
-		out_ind = "data/Patterson2022.ind",
-	params:
-		path = lambda w, input: input[0].replace(".bed", ""),
-	conda: "../envs/analyses.yaml"
-	script:
-		"../scripts/convert_plink2sgkit.py"
-
-
 rule prepare_maps:
 	input:
 		bmap_files = expand('data/Murphy2021_Bvalues/CADD_bestfit/chr{num}.bmap.txt', num=range(1, 23)),
@@ -107,3 +91,20 @@ rule prepare_maps:
 	conda: "../envs/analyses.yaml"
 	script:
 		"../scripts/prepare_maps.py"
+
+rule convert_plink2sgkit:
+	input:
+		multiext("data/Patterson2022", ".bed", ".bim", ".fam"),
+		metadata_S3 = "data/Patterson2022_TableS3.tsv",
+		metadata_S5 = "data/Patterson2022_TableS5_corrected.tsv",
+		bval_table = 'data/Murphy2021_Bvalues_compiled.bmap.txt',
+		rval_table = 'data/Bherer2017_Refined_EUR_genetic_map_sexavg.rmap.txt',
+	output:
+		zarr_store = directory("data/Patterson2022.zarr"),
+		meta_out = "data/Patterson2022_metadata.tsv",
+		out_ind = "data/Patterson2022.ind",
+	params:
+		path = lambda w, input: input[0].replace(".bed", ""),
+	conda: "../envs/analyses.yaml"
+	script:
+		"../scripts/convert_plink2sgkit.py"
