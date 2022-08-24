@@ -90,7 +90,7 @@ ds['variant_bval'] = da_bval
 ds['variant_rate'] = da_rmap
 
 # save
-ds = ds.chunks(variant_chunk_size)
+ds = ds.chunk(variant_chunk_size)
 
 for var in ds:
 	ds[var].encoding.clear()
