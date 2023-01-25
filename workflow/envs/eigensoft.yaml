@@ -1,0 +1,7 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - eigensoft=7.2.1
+  - plink=1.90

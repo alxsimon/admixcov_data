@@ -1,4 +1,4 @@
 .snakemake/
 .vscode/
-.results/
-.logs/
+results/
+logs/
