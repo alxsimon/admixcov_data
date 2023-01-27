@@ -44,7 +44,7 @@ rule download_Fowler2021:
 		unzip Fowler2021.zip && rm Fowler2021.zip
 		"""
 
-rule data_filter_merge_1:
+rule data_filter_merge_Patterson2022:
 	input: 
 		sample_list = "data/Patterson2022/list_selected_samples.txt",
 		aadr_ind = "data/v50.0_1240k_public.ind",

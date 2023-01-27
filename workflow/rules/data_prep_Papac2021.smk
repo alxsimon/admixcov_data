@@ -11,109 +11,66 @@ rule download_Papac2021:
 		unzip Papac2021.zip && rm Papac2021.zip
 		"""
 
-# rule data_filter_merge_1:
-# 	input: 
-# 		sample_list = "data/Patterson2022/list_selected_samples.txt",
-# 		aadr_ind = "data/v50.0_1240k_public.ind",
-# 		brit_ind = "data/Patterson2022/brit.ind",
-# 		hazleton_ind = "data/Patterson2022/Hazleton_v51.ind",
-# 		aadr_modern = "data/list_samples_aadr_modern.txt",
-# 	output:
-# 		"data/v50.0_1240k_public_filtered_Patterson2022.ind",
-# 		"data/Patterson2022/brit_filtered.ind",
-# 		"data/Patterson2022/Hazleton_v51_filtered.ind",
-# 	conda: "../envs/r-env.yaml"
-# 	script:
-# 		"../scripts/data_filter_merge_Patterson2022.R"
+rule data_filter_merge_Papac2021:
+	input: 
+		multiext("data/v50.0_1240k_public", ".geno", ".snp", ".ind"),
+		multiext("data/Papac2021/Papac2021_forUpload", '.geno', '.snp', '.ind'),
+		"data/Papac2021/Modern_samples_Papac2021.ind",
+		"data/Papac2021/Papac2021_TableS5_ancient_published.tsv",
+	output:
+		"data/Papac2021/Papac2021_forUpload.modif.snp",
+		"data/v50.0_1240k_public_filtered_Papac2021.ind",
+	conda: "../envs/r-env.yaml"
+	script:
+		"../scripts/data_filter_merge_Papac2021.R"
 
 
-# rule merge_Patterson2022_1:
-# 	input:
-# 		multiext("data/Patterson2022/brit", ".geno", ".snp", "_filtered.ind"),
-# 		multiext("data/Patterson2022/Hazleton_v51", ".geno", ".snp", "_filtered.ind"),
-# 	output:
-# 		"data/Patterson2022/mergit_1.par",
-# 		temp(multiext("data/Patterson2022/tmp_1", ".geno", ".snp", ".ind")),
-# 	log:
-# 		"logs/mergit_Patterson2022_1.log"
-# 	conda: "../envs/eigensoft.yaml"
-# 	shell:
-# 		"""
-# 		cat << EOF > {output[0]}
-# geno1: {input[0]}
-# snp1: {input[1]}
-# ind1: {input[2]}
-# geno2: {input[3]}
-# snp2: {input[4]}
-# ind2: {input[5]}
-# outputformat: EIGENSTRAT
-# genooutfilename: {output[1]}
-# snpoutfilename: {output[2]}
-# indoutfilename: {output[3]}
-# allowdups: NO
-# hashcheck: NO
-# EOF
+rule merge_Papac2021:
+	input:
+		multiext("data/Papac2021/Papac2021_forUpload", ".geno", ".modif.snp", ".ind"),
+		multiext("data/v50.0_1240k_public", ".geno", ".snp", "_filtered_Papac2021.ind"),
+	output:
+		"data/Papac2021/mergit.par",
+		temp(multiext("data/Papac2021/tmp", ".bed", ".bim", ".fam")),
+	log:
+		"logs/mergit_Papac2021.log"
+	conda: "../envs/eigensoft.yaml"
+	shell:
+		"""
+		cat << EOF > {output[0]}
+geno1: {input[0]}
+snp1: {input[1]}
+ind1: {input[2]}
+geno2: {input[3]}
+snp2: {input[4]}
+ind2: {input[5]}
+outputformat: PACKEDPED
+genooutfilename: {output[1]}
+snpoutfilename: {output[2]}
+indoutfilename: {output[3]}
+allowdups: YES
+hashcheck: NO
+EOF
 
-# 		mergeit -p {output[0]} > {log} 2>&1
-# 		"""
-
-# rule merge_Patterson2022_2:
-# 	input:
-# 		multiext("data/Patterson2022/tmp_1", ".geno", ".snp", ".ind"),
-# 		multiext("data/v50.0_1240k_public", ".geno", ".snp", "_filtered_Patterson2022.ind"),
-# 	output:
-# 		"data/Patterson2022/mergit_2.par",
-# 		temp(multiext("data/Patterson2022/tmp_2", ".bed", ".bim", ".fam")),
-# 	log:
-# 		"logs/mergit_Patterson2022_2.log"
-# 	conda: "../envs/eigensoft.yaml"
-# 	shell:
-# 		"""
-# 		cat << EOF > {output[0]}
-# geno1: {input[0]}
-# snp1: {input[1]}
-# ind1: {input[2]}
-# geno2: {input[3]}
-# snp2: {input[4]}
-# ind2: {input[5]}
-# outputformat: PACKEDPED
-# genooutfilename: {output[1]}
-# snpoutfilename: {output[2]}
-# indoutfilename: {output[3]}
-# allowdups: NO
-# hashcheck: NO
-# EOF
-
-# 		mergeit -p {output[0]} > {log} 2>&1
-# 		"""
+		mergeit -p {output[0]} > {log} 2>&1
+		"""
 
 
-# rule make_bed_Patterson2022:
-# 	input:
-# 		multiext("data/Patterson2022/tmp_2", ".bed", ".bim", ".fam"),
-# 	output:
-# 		multiext("data/Patterson2022/Patterson2022", ".bed", ".bim", ".fam"),
-# 	params:
-# 		prefix_in = lambda w, input: input[0].replace(".bed", ""),
-# 		prefix_out = lambda w, output: output[0].replace(".bed", ""),
-# 	conda: "../envs/eigensoft.yaml"
-# 	shell:
-# 		"""
-# 		plink --bfile {params.prefix_in} \
-# 		--make-bed --allow-no-sex --out {params.prefix_out}
-# 		"""
+rule make_bed_Papac2021:
+	input:
+		multiext("data/Papac2021/tmp", ".bed", ".bim", ".fam"),
+	output:
+		multiext("data/Papac2021/Papac2021", ".bed", ".bim", ".fam"),
+	params:
+		prefix_in = lambda w, input: input[0].replace(".bed", ""),
+		prefix_out = lambda w, output: output[0].replace(".bed", ""),
+	conda: "../envs/eigensoft.yaml"
+	shell:
+		"""
+		plink --bfile {params.prefix_in} \
+		--make-bed --allow-no-sex --out {params.prefix_out}
+		"""
 
-# rule prepare_maps:
-# 	input:
-# 		bmap_files = expand('data/Murphy2021_Bvalues/CADD_bestfit/chr{num}.bmap.txt', num=range(1, 23)),
-# 		rmap_files = expand('data/Bherer2017_Refined_EUR_genetic_map_b37/sexavg_chr{num}.txt', num=range(1, 23)),
-# 		chr_len = 'data/hg19_chr_len.txt',
-# 	output:
-# 		bmap_out = 'data/Murphy2021_Bvalues_compiled.bmap.txt',
-# 		rmap_out = 'data/Bherer2017_Refined_EUR_genetic_map_sexavg.rmap.txt',
-# 	conda: "../envs/py-env.yaml"
-# 	script:
-# 		"../scripts/prepare_maps.py"
 
 # rule convert_plink2sgkit_Patterson2022:
 # 	input:

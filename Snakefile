@@ -12,4 +12,4 @@ rule all:
 		rules.smartpca_Patterson2022.output,
 		rules.smartpca_Patterson2022_proj.output,
 		rules.prepare_maps.output,
-		rules.download_Papac2021.output,
+		rules.make_bed_Papac2021.output,
