@@ -4,8 +4,11 @@ channels:
   - defaults
 dependencies:
   - python=3.10
-  - numpy
-  - matplotlib
-  - seaborn
-  - pandas
-  - sgkit=0.5.0
+  - numpy=1.23.3
+  - matplotlib=3.6.3
+  - seaborn=0.12.2
+  - pandas=1.5.3
+  - sgkit=0.6.0
+  - pip
+  - pip:
+    - git+https://github.com/alxsimon/py-admixcov.git@c9e53cd

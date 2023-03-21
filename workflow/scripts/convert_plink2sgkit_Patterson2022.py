@@ -1,4 +1,3 @@
-import sgkit as sg
 from sgkit.io.plink import read_plink
 import pandas as pd
 import numpy as np
