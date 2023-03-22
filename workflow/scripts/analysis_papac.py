@@ -52,7 +52,6 @@ kept_loci = (
 	np.all((ds.variant_count_nonmiss.values > 2), axis=0) 
 	& np.all((ds.variant_count_nonmiss_ref.values > 2), axis=0)
 )
-print(f'# loci kept: {kept_loci.sum()}')
 with dask.config.set(**{'array.slicing.split_large_chunks': False}):
 	ds = ds.sel(variants=kept_loci)
 
@@ -232,7 +231,7 @@ fig, axs = plt.subplots(3, 2, figsize=(10, 8))
 
 for i, pop in enumerate(ds.cohorts_ref_id.values):
 	axs[0,0].plot(times, Q[:,i], '-o', label=pop)
-axs[0,0].set_xlim(times[0] + time_padding, -time_padding)
+axs[0,0].set_xlim(times[0] + time_padding, times[-1] - time_padding)
 axs[0,0].set_ylim((0,1))
 axs[0,0].set_ylabel("Mean ancestry")
 axs[0,0].set_xlabel("Time point")
@@ -249,16 +248,15 @@ ac.cov_lineplot(times, straps_cov, axs[1, 1], colors=colors_oi, time_padding=tim
 axs[1, 1].set_ylabel('admixture corrected covariance')
 
 sns.lineplot(x=times[1:], y=totvar, ax=axs[2, 0], marker='o')
-axs[2, 0].set_xlim(times[1] + time_padding, -time_padding)
+axs[2, 0].set_xlim(times[1] + time_padding, times[-1] - time_padding)
 axs[2, 0].set_ylim(0)
 axs[2, 0].set_ylabel('Total variance (t)')
 
 ac.plot_ci_line(times[1:], np.stack(straps_G_nc).T, ax=axs[2, 1], linestyle='dashed', marker='o')
 ac.plot_ci_line(times[1:], np.stack(straps_G).T, ax=axs[2, 1], marker='o')
 ac.plot_ci_line(times[1:], np.stack(straps_Ap).T, ax=axs[2, 1], color='blue', marker='s')
-axs[2, 1].set_xlim(times[1] + time_padding, -time_padding)
-axs[2, 1].set_ylim(-1, 1)
-axs[2, 1].hlines(y=0, xmin=0, xmax=times[1] + time_padding, colors='black', linestyles='dotted')
+axs[2, 1].set_xlim(times[1] + time_padding, times[-1] - time_padding)
+axs[2, 1].hlines(y=0, xmin=times[-1] - time_padding, xmax=times[1] + time_padding, colors='black', linestyles='dotted')
 axs[2, 1].set_xlabel('time')
 axs[2, 1].set_ylabel("G(t) or A'(t)")
 
