@@ -188,9 +188,17 @@ straps_cov = ac.bootstrap_stat(tiled_corr_cov, weights, N_boot)
 straps_G = []
 straps_G_nc = []
 straps_Ap = []
+straps_totvar = []
 k = tiled_cov.shape[1]
 for i in range(1, k + 1):
     tmp_totvar = np.sum(tiled_cov[:, :i, :i], axis=(1, 2))
+    straps_totvar.append(
+        ac.bootstrap_stat(
+            tmp_totvar,
+            weights,
+            N_boot,
+        )
+    )
     straps_G.append(
         ac.bootstrap_ratio(
             np.stack([ac.get_matrix_sum(c) for c in tiled_corr_cov[:, :i, :i]]),
@@ -243,7 +251,7 @@ axs[0,0].set_xlim(times[0] + time_padding, times[-1] - time_padding)
 axs[0,0].set_ylim((0,1))
 axs[0,0].set_ylabel("Mean ancestry")
 axs[0,0].set_xlabel("Time point")
-axs[0,0].legend(loc="upper right")
+axs[0,0].legend(bbox_to_anchor=(1, 1))
 
 combined_ci = ac.combine_covmat_CIs(straps_cov, straps_cov_nc)
 scale_max = np.max(np.abs([np.nanmin(combined_ci[1] - np.diag(np.diag(combined_ci[1]))), np.nanmax(combined_ci[1] - np.diag(np.diag(combined_ci[1])))]))
@@ -255,7 +263,7 @@ axs[1, 0].set_ylabel('raw covariance (without bias)')
 ac.cov_lineplot(times, straps_cov, axs[1, 1], colors=colors_oi, time_padding=time_padding, d=50, marker='o', ylim=axs[1, 0].get_ylim())
 axs[1, 1].set_ylabel('admixture corrected covariance')
 
-sns.lineplot(x=times[1:], y=totvar, ax=axs[2, 0], marker='o')
+ac.plot_ci_line(times[1:], np.stack(straps_totvar).T, ax=axs[2, 0], color='black', marker='o')
 axs[2, 0].set_xlim(times[1] + time_padding, times[-1] - time_padding)
 axs[2, 0].set_ylim(0)
 axs[2, 0].set_ylabel('Total variance (t)')
