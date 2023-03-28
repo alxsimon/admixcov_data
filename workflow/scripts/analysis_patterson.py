@@ -243,12 +243,15 @@ colors_oi = [
     '#F0E442', # yellow
 ]
 
+times = np.array(times) # ensure it is an array
+
 fig, axs = plt.subplots(3, 2, figsize=(10, 8))
 
+fmts = ['-o', '-s', '-^']
 for i, pop in enumerate(ds.cohorts_ref_id.values):
-	axs[0,0].plot(times, Q[:,i], '-o', label=pop)
+	axs[0,0].plot(times, Q[:,i], fmts[i], label=pop, color=colors_oi[i])
 axs[0,0].set_xlim(times[0] + time_padding, times[-1] - time_padding)
-axs[0,0].set_ylim((0,1))
+axs[0,0].set_ylim(top=1)
 axs[0,0].set_ylabel("Mean ancestry")
 axs[0,0].set_xlabel("Time point")
 axs[0,0].legend(bbox_to_anchor=(1, 1))
@@ -268,9 +271,10 @@ axs[2, 0].set_xlim(times[1] + time_padding, times[-1] - time_padding)
 axs[2, 0].set_ylim(0)
 axs[2, 0].set_ylabel('Total variance (t)')
 
-ac.plot_ci_line(times[1:], np.stack(straps_G_nc).T, ax=axs[2, 1], linestyle='dashed', marker='o')
+x_shift = 50
+ac.plot_ci_line(times[1:] + x_shift, np.stack(straps_G_nc).T, ax=axs[2, 1], linestyle='dashed', marker='o')
 ac.plot_ci_line(times[1:], np.stack(straps_G).T, ax=axs[2, 1], marker='o')
-ac.plot_ci_line(times[1:], np.stack(straps_Ap).T, ax=axs[2, 1], color='blue', marker='s')
+ac.plot_ci_line(times[1:] - x_shift, np.stack(straps_Ap).T, ax=axs[2, 1], color='blue', marker='s')
 axs[2, 1].set_xlim(times[1] + time_padding, times[-1] - time_padding)
 axs[2, 1].hlines(y=0, xmin=times[-1] - time_padding, xmax=times[1] + time_padding, colors='black', linestyles='dotted')
 axs[2, 1].set_xlabel('time')
