@@ -6,60 +6,69 @@ import seaborn as sns
 import pandas as pd
 import dask
 
+report = open(snakemake.input['report'], 'w')
+
 ds = sg.load_dataset(snakemake.input['zarr'])
+report.write("Dataset import:\n")
+print(ds, file=report)
 
 cohorts = [
-	'England.and.Wales_N',
-	'England.and.Wales_C.EBA',
-	'England.and.Wales_MBA',
-	'England.and.Wales_LBA',
-	'England.and.Wales_IA',
-	'England.and.Wales_PostIA',
-	'England.and.Wales_Modern',
+    'England.and.Wales_N',
+    'England.and.Wales_C.EBA',
+    'England.and.Wales_MBA',
+    'England.and.Wales_LBA',
+    'England.and.Wales_IA',
+    'England.and.Wales_PostIA',
+    'England.and.Wales_Modern',
 ]
 cohorts_ref = [
-	'WHGA',
-	'Balkan_N',
-	'OldSteppe',
+    'WHGA',
+    'Balkan_N',
+    'OldSteppe',
 ]
 ref_inds = np.isin(ds.sample_group.values, cohorts_ref)
 kept_inds = (
-		(ds.sample_filter_0.values == 'Use')
-		& np.isin(ds.sample_filter_1.values, cohorts)
-	) | ref_inds
+        (ds.sample_filter_0.values == 'Use')
+        & np.isin(ds.sample_filter_1.values, cohorts)
+    ) | ref_inds
 with dask.config.set(**{'array.slicing.split_large_chunks': True}):
-	ds = ds.isel(samples=kept_inds)
+    ds = ds.isel(samples=kept_inds)
 
 ds['mask_cohorts'] = (
-	['cohorts', 'samples'],
-	[(ds.sample_filter_1.values == p) for p in cohorts]
+    ['cohorts', 'samples'],
+    [(ds.sample_filter_1.values == p) for p in cohorts]
 )
 ds['mask_cohorts_ref'] = (
-	['cohorts_ref', 'samples'],
-	[(ds.sample_group.values == p) for p in cohorts_ref]
+    ['cohorts_ref', 'samples'],
+    [(ds.sample_group.values == p) for p in cohorts_ref]
 )
 
 ds['variant_count_nonmiss'] = (
-	['cohorts', 'variants'],
-	np.stack([
-		np.sum(~ds.call_genotype_mask.values[:, mask, 0], axis=1) 
-		for mask in ds.mask_cohorts.values
-	])
+    ['cohorts', 'variants'],
+    np.stack([
+        np.sum(~ds.call_genotype_mask.values[:, mask, 0], axis=1) 
+        for mask in ds.mask_cohorts.values
+    ])
 )
 ds['variant_count_nonmiss_ref'] = (
-	['cohorts_ref', 'variants'],
-	np.stack([
-		np.sum(~ds.call_genotype_mask.values[:, mask, 0], axis=1)
-		for mask in ds.mask_cohorts_ref.values
-	])
+    ['cohorts_ref', 'variants'],
+    np.stack([
+        np.sum(~ds.call_genotype_mask.values[:, mask, 0], axis=1)
+        for mask in ds.mask_cohorts_ref.values
+    ])
 )
 kept_loci = (
-	np.all((ds.variant_count_nonmiss.values > 10), axis=0) 
-	& np.all((ds.variant_count_nonmiss_ref.values > 5), axis=0)
+    np.all((ds.variant_count_nonmiss.values > 10), axis=0) 
+    & np.all((ds.variant_count_nonmiss_ref.values > 5), axis=0)
 )
 with dask.config.set(**{'array.slicing.split_large_chunks': False}):
-	ds = ds.sel(variants=kept_loci)
+    ds = ds.sel(variants=kept_loci)
+report.write("\n==========\nFiltered dataset:\n")
+print(ds, file=report)
 
+times = [np.mean(ds.sample_date_bp.values[mask]) for mask in ds.mask_cohorts.values]
+report.write("\n==========\nMean times:\n")
+print(times, file=report)
 
 geno = ds.call_genotype.values[:,:,0].T.astype(float)
 geno[geno == -1] = np.nan
@@ -69,49 +78,47 @@ sample_size_ref = [np.sum(mask) for mask in ds.mask_cohorts_ref.values]
 
 
 def allele_freq(geno, mask):
-	return np.nanmean(geno[mask], axis=0)
+    return np.nanmean(geno[mask], axis=0)
 
 af = np.stack([
-	allele_freq(geno, mask)
-	for mask in ds.mask_cohorts.values
+    allele_freq(geno, mask)
+    for mask in ds.mask_cohorts.values
 ])
 
 sample_size = np.array([
-	np.sum(mask)
-	for mask in ds.mask_cohorts.values
+    np.sum(mask)
+    for mask in ds.mask_cohorts.values
 ])
 
-times = [np.mean(ds.sample_date_bp.values[mask]) for mask in ds.mask_cohorts.values]
-
-Q = admix = np.stack([
-	np.mean(ds.sample_admixture[mask], axis=0)
-	for mask in ds.mask_cohorts.values
+Q  = np.stack([
+    np.mean(ds.sample_admixture[mask], axis=0)
+    for mask in ds.mask_cohorts.values
 ])
 
 covmat = ac.get_covariance_matrix(
-	af,
-	bias=True,
-	sample_size=ds.variant_count_nonmiss.values,
+    af,
+    bias=True,
+    sample_size=ds.variant_count_nonmiss.values,
 )
 admix_cov = ac.get_admix_covariance_matrix(
-	Q,
-	ref_af=ref_af,
-	bias=True,
-	ref_sample_size=ds.variant_count_nonmiss_ref.values,
+    Q,
+    ref_af=ref_af,
+    bias=True,
+    ref_sample_size=ds.variant_count_nonmiss_ref.values,
 )
 
 alpha_mask = np.array([ # WHG, EEF, Steppe
-	[0, 0, 1],
-	[0, 1, 0],
-	[0, 1, 0],
-	[0, 1, 0],
-	[1, 0, 0],
-	[0, 1, 0],
+    [0, 0, 1],
+    [0, 1, 0],
+    [0, 1, 0],
+    [0, 1, 0],
+    [1, 0, 0],
+    [0, 1, 0],
 ], dtype=bool) # says which alpha is different from zero
 alphas = ac.q2a_simple(Q, alpha_mask)
 var_drift = ac.solve_for_variances(
-	np.diag(covmat - admix_cov),
-	alphas,
+    np.diag(covmat - admix_cov),
+    alphas,
 )
 drift_err = ac.get_drift_err_matrix(var_drift, alphas)
 
@@ -249,7 +256,7 @@ fig, axs = plt.subplots(3, 2, figsize=(10, 8))
 
 fmts = ['-o', '-s', '-^']
 for i, pop in enumerate(ds.cohorts_ref_id.values):
-	axs[0,0].plot(times, Q[:,i], fmts[i], label=pop, color=colors_oi[i])
+    axs[0,0].plot(times, Q[:,i], fmts[i], label=pop, color=colors_oi[i])
 axs[0,0].set_xlim(times[0] + time_padding, times[-1] - time_padding)
 axs[0,0].set_ylim(top=1)
 axs[0,0].set_ylabel("Mean ancestry")
@@ -281,5 +288,76 @@ axs[2, 1].set_xlabel('time')
 axs[2, 1].set_ylabel("G(t) or A'(t)")
 
 fig.tight_layout()
-
 fig.savefig(snakemake.output['fig'])
+
+
+#================
+# Binning
+# recombination
+nanmask = ~np.isnan(ds.variant_rate.values)
+ds_rate = ds.sel(variants=nanmask)
+
+q = np.quantile(ds_rate.variant_rate.values, list(np.arange(1/5, 1, 1/5)))
+report.write("\n==========\nRecombination quantiles:\n")
+print(q, file=report)
+
+rec_bins = np.digitize(ds_rate.variant_rate.values, q)
+
+bin_res = []
+for bin in np.unique(rec_bins):
+	bin_res.append(
+		ac.sg.ds2stats(
+			ds_rate.sel(variants=(rec_bins == bin)),
+			alpha_mask,
+			tile_size_variant=1000,
+		)
+	)
+
+# ( covmat, G, Ap, totvar, straps_cov, straps_G, straps_Ap, straps_totvar )
+G_CI = [x[5] for x in bin_res]
+Ap_CI = [x[6] for x in bin_res]
+
+fig, axs = plt.subplots((1, 2))
+ac.plot_ci_line(np.unique(rec_bins), np.stack(G_CI).T, axs[0], marker='o')
+ac.plot_ci_line(np.unique(rec_bins), np.stack(Ap_CI).T, axs[0], marker='o', color='b')
+axs[0].hlines(y=0, xmin=0, xmax=4, colors='black', linestyles='dotted')
+axs[0].set_title('G and A\' per recombination bin')
+
+
+# bval
+nanmask = ~np.isnan(ds.variant_bval.values)
+ds_bval = ds.sel(variants=nanmask)
+
+q = np.quantile(ds_bval.variant_bval.values, list(np.arange(1/5, 1, 1/5)))
+report.write("\n==========\nB-values quantiles:\n")
+print(q, file=report)
+
+rec_bins = np.digitize(ds_bval.variant_bval.values, q)
+
+bin_res = []
+for bin in np.unique(rec_bins):
+	bin_res.append(
+		ac.sg.ds2stats(
+			ds_bval.sel(variants=(rec_bins == bin)),
+			alpha_mask,
+			tile_size_variant=1000,
+		)
+	)
+
+# ( covmat, G, Ap, totvar, straps_cov, straps_G, straps_Ap, straps_totvar )
+G_CI = [x[5] for x in bin_res]
+Ap_CI = [x[6] for x in bin_res]
+
+ac.plot_ci_line(np.unique(rec_bins), np.stack(G_CI).T, axs[1], marker='o')
+ac.plot_ci_line(np.unique(rec_bins), np.stack(Ap_CI).T, axs[1], marker='o', color='b')
+axs[1].hlines(y=0, xmin=0, xmax=4, colors='black', linestyles='dotted')
+axs[1].set_title('G and A\' per B-value bin')
+
+fig.tight_layout()
+fig.savefig(snakemake.output['fig_bins'])
+
+#==============
+# close report
+report.close()
+
+

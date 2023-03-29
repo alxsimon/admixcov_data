@@ -5,57 +5,65 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import dask
 
+report = open(snakemake.input['report'], 'w')
+
 ds = sg.load_dataset(snakemake.input['zarr'])
+report.write("Dataset import:\n")
+print(ds, file=report)
 
 # grouping
 time_periods_grouping = {
-	'Bohemia_N': ['Bohemia_N'],
-	'Bohemia_PE': ['Bohemia_PE'],
-	'Bohemia_EE': ['Bohemia_EE'],
-	'Bohemia_ME': ['Bohemia_ME'], # ['Bohemia_ME_Baden', 'Bohemia_ME_Rivnac', 'Bohemia_ME_GAC'],
-	'Bohemia_CW': ['Bohemia_CW_Early', 'Bohemia_CW_Late'],
-	'Bohemia_BB': ['Bohemia_BB_Early', 'Bohemia_BB_Late'],
-	'Bohemia_Unetice': ['Bohemia_Unetice_preClassical', 'Bohemia_Unetice_Classical'],
+    'Bohemia_N': ['Bohemia_N'],
+    'Bohemia_PE': ['Bohemia_PE'],
+    'Bohemia_EE': ['Bohemia_EE'],
+    'Bohemia_ME': ['Bohemia_ME'], # ['Bohemia_ME_Baden', 'Bohemia_ME_Rivnac', 'Bohemia_ME_GAC'],
+    'Bohemia_CW': ['Bohemia_CW_Early', 'Bohemia_CW_Late'],
+    'Bohemia_BB': ['Bohemia_BB_Early', 'Bohemia_BB_Late'],
+    'Bohemia_Unetice': ['Bohemia_Unetice_preClassical', 'Bohemia_Unetice_Classical'],
 }
 
 cohorts = list(time_periods_grouping.keys())
 cohorts_ref = [
-	"Anatolia_Neolithic",
-	"WHG",
-	"Yamnaya",
+    "Anatolia_Neolithic",
+    "WHG",
+    "Yamnaya",
 ]
 
 ds['mask_cohorts'] = (
-	['cohorts', 'samples'],
-	[[i in gs for i in ds.sample_group.values] for gs in time_periods_grouping.values()]
+    ['cohorts', 'samples'],
+    [[i in gs for i in ds.sample_group.values] for gs in time_periods_grouping.values()]
 )
 ds['mask_cohorts_ref'] = (
-	['cohorts_ref', 'samples'],
-	[(ds.sample_group.values == p) for p in cohorts_ref]
+    ['cohorts_ref', 'samples'],
+    [(ds.sample_group.values == p) for p in cohorts_ref]
 )
 
 ds['variant_count_nonmiss'] = (
-	['cohorts', 'variants'],
-	np.stack([
-		np.sum(~ds.call_genotype_mask.values[:, mask, 0], axis=1) 
-		for mask in ds.mask_cohorts.values
-	])
+    ['cohorts', 'variants'],
+    np.stack([
+        np.sum(~ds.call_genotype_mask.values[:, mask, 0], axis=1) 
+        for mask in ds.mask_cohorts.values
+    ])
 )
 ds['variant_count_nonmiss_ref'] = (
-	['cohorts_ref', 'variants'],
-	np.stack([
-		np.sum(~ds.call_genotype_mask.values[:, mask, 0], axis=1)
-		for mask in ds.mask_cohorts_ref.values
-	])
+    ['cohorts_ref', 'variants'],
+    np.stack([
+        np.sum(~ds.call_genotype_mask.values[:, mask, 0], axis=1)
+        for mask in ds.mask_cohorts_ref.values
+    ])
 )
 kept_loci = (
-	np.all((ds.variant_count_nonmiss.values > 2), axis=0) 
-	& np.all((ds.variant_count_nonmiss_ref.values > 2), axis=0)
+    np.all((ds.variant_count_nonmiss.values > 2), axis=0) 
+    & np.all((ds.variant_count_nonmiss_ref.values > 2), axis=0)
 )
 with dask.config.set(**{'array.slicing.split_large_chunks': False}):
-	ds = ds.sel(variants=kept_loci)
+    ds = ds.sel(variants=kept_loci)
+report.write("\n==========\nFiltered dataset:\n")
+print(ds, file=report)
 
 times = [np.mean(ds.sample_date_bp.values[mask]) for mask in ds.mask_cohorts.values]
+report.write("\n==========\nMean times:\n")
+print(times, file=report)
 
 geno = ds.call_genotype.values[:,:,0].T.astype(float)
 geno[geno == -1] = np.nan
@@ -64,47 +72,47 @@ ref_af = np.stack([np.nanmean(geno[mask], axis=0) for mask in ds.mask_cohorts_re
 sample_size_ref = [np.sum(mask) for mask in ds.mask_cohorts_ref.values]
 
 def allele_freq(geno, mask):
-	return np.nanmean(geno[mask], axis=0)
+    return np.nanmean(geno[mask], axis=0)
 
 af = np.stack([
-	allele_freq(geno, mask)
-	for mask in ds.mask_cohorts.values
+    allele_freq(geno, mask)
+    for mask in ds.mask_cohorts.values
 ])
 
 sample_size = np.array([
-	np.sum(mask)
-	for mask in ds.mask_cohorts.values
+    np.sum(mask)
+    for mask in ds.mask_cohorts.values
 ])
 
-Q = admix = np.stack([
-	np.mean(ds.sample_admixture[mask], axis=0)
-	for mask in ds.mask_cohorts.values
+Q = np.stack([
+    np.mean(ds.sample_admixture[mask], axis=0)
+    for mask in ds.mask_cohorts.values
 ])
 
 covmat = ac.get_covariance_matrix(
-	af,
-	bias=True,
-	sample_size=ds.variant_count_nonmiss.values,
+    af,
+    bias=True,
+    sample_size=ds.variant_count_nonmiss.values,
 )
 admix_cov = ac.get_admix_covariance_matrix(
-	Q,
-	ref_af=ref_af,
-	bias=True,
-	ref_sample_size=ds.variant_count_nonmiss_ref.values,
+    Q,
+    ref_af=ref_af,
+    bias=True,
+    ref_sample_size=ds.variant_count_nonmiss_ref.values,
 )
 
 alpha_mask = np.array([ # Anatolia, WHG, Yamnaya
-	[0, 1, 0],
-	[0, 0, 0],
-	[0, 0, 0],
-	[0, 0, 1],
-	[1, 0, 0],
-	[0, 0, 1],
+    [0, 1, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 1],
+    [1, 0, 0],
+    [0, 0, 1],
 ], dtype=bool) # says which alpha is different from zero
 alphas = ac.q2a_simple(Q, alpha_mask)
 var_drift = ac.solve_for_variances(
-	np.diag(covmat - admix_cov),
-	alphas,
+    np.diag(covmat - admix_cov),
+    alphas,
 )
 drift_err = ac.get_drift_err_matrix(var_drift, alphas)
 
@@ -241,7 +249,7 @@ fig, axs = plt.subplots(3, 2, figsize=(10, 8))
 
 fmts = ['-o', '-s', '-^']
 for i, pop in enumerate(ds.cohorts_ref_id.values):
-	axs[0,0].plot(times, Q[:,i], fmts[i], label=pop, color=colors_oi[i])
+    axs[0,0].plot(times, Q[:,i], fmts[i], label=pop, color=colors_oi[i])
 axs[0,0].set_xlim(times[0] + time_padding, times[-1] - time_padding)
 axs[0,0].set_ylim(top=1)
 axs[0,0].set_ylabel("Mean ancestry")
@@ -275,3 +283,7 @@ axs[2, 1].set_ylabel("G(t) or A'(t)")
 fig.tight_layout()
 
 fig.savefig(snakemake.output['fig'])
+
+
+# close report
+report.close()

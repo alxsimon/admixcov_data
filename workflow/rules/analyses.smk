@@ -2,7 +2,9 @@ rule analysis_patterson:
 	input:
 		zarr = 'data/Patterson2022/Patterson2022.zarr',
 	output:
-		fig = 'results/Patterson2022/main_figure_Patterson2022.pdf',
+		report = 'results/Patterson2022/analyses_info_Patterson2022.txt',
+		fig = 'results/Patterson2022/fig_Patterson2022_main.pdf',
+		fig_bins = 'results/Patterson2022/fig_Patterson2022_bins.pdf',
 	conda:
 		"../envs/py-env.yaml"
 	script:
@@ -12,7 +14,9 @@ rule analysis_papac:
 	input:
 		zarr = 'data/Papac2021/Papac2021.zarr',
 	output:
-		fig = 'results/Papac2021/main_figure_Papac2021.pdf',
+		report = 'results/Papac2021/analyses_info_Papac2021.txt',
+		fig = 'results/Papac2021/fig_Papac2021_main.pdf',
+		fig_bins = 'results/Papac2021/fig_Papac2021_bins.pdf',
 	conda:
 		"../envs/py-env.yaml"
 	script:

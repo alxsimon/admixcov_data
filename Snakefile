@@ -12,5 +12,5 @@ rule all:
 		rules.smartpca_Patterson2022.output,
 		rules.smartpca_Patterson2022_proj.output,
 		rules.prepare_maps.output,
-		'results/Patterson2022/main_figure_Patterson2022.pdf',
-		'results/Papac2021/main_figure_Papac2021.pdf',
+		rules.analysis_patterson.output,
+		rules.analysis_papac.output,
