@@ -5,11 +5,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import dask
 
-report = open(snakemake.input['report'], 'w')
+report = open(snakemake.output['report'], 'w')
 
 ds = sg.load_dataset(snakemake.input['zarr'])
 report.write("Dataset import:\n")
-print(ds, file=report)
+print(ds.dims, file=report)
 
 # grouping
 time_periods_grouping = {
@@ -59,7 +59,7 @@ kept_loci = (
 with dask.config.set(**{'array.slicing.split_large_chunks': False}):
     ds = ds.sel(variants=kept_loci)
 report.write("\n==========\nFiltered dataset:\n")
-print(ds, file=report)
+print(ds.dims, file=report)
 
 times = [np.mean(ds.sample_date_bp.values[mask]) for mask in ds.mask_cohorts.values]
 report.write("\n==========\nMean times:\n")
@@ -227,6 +227,13 @@ for i in range(1, k + 1):
         )
     )
 
+report.write("\n==========\nConfidence intervals:\n")
+report.write("G:\n")
+print(straps_G, file=report)
+report.write("G_nc:\n")
+print(straps_G_nc, file=report)
+report.write("Ap:\n")
+print(straps_Ap, file=report)
 
 # Plotting
 
@@ -248,8 +255,9 @@ times = np.array(times) # ensure it is an array
 fig, axs = plt.subplots(3, 2, figsize=(10, 8))
 
 fmts = ['-o', '-s', '-^']
+labels = ['EEF-like', 'WHG-like', 'Steppe-like']
 for i, pop in enumerate(ds.cohorts_ref_id.values):
-    axs[0,0].plot(times, Q[:,i], fmts[i], label=pop, color=colors_oi[i])
+    axs[0,0].plot(times, Q[:,i], fmts[i], label=labels[i], color=colors_oi[i])
 axs[0,0].set_xlim(times[0] + time_padding, times[-1] - time_padding)
 axs[0,0].set_ylim(top=1)
 axs[0,0].set_ylabel("Mean ancestry")
@@ -283,6 +291,72 @@ axs[2, 1].set_ylabel("G(t) or A'(t)")
 fig.tight_layout()
 
 fig.savefig(snakemake.output['fig'])
+
+
+#================
+# Binning
+# recombination
+nanmask = ~np.isnan(ds.variant_rate.values)
+ds_rate = ds.sel(variants=nanmask)
+
+q = np.quantile(ds_rate.variant_rate.values, list(np.arange(1/5, 1, 1/5)))
+report.write("\n==========\nRecombination quantiles:\n")
+print(q, file=report)
+
+rec_bins = np.digitize(ds_rate.variant_rate.values, q)
+
+bin_res = []
+for bin in np.unique(rec_bins):
+	bin_res.append(
+		ac.sg.ds2stats(
+			ds_rate.sel(variants=(rec_bins == bin)),
+			alpha_mask,
+			tile_size_variant=1000,
+		)
+	)
+
+# ( covmat, G, Ap, totvar, straps_cov, straps_G, straps_Ap, straps_totvar )
+G_CI = [x[5] for x in bin_res]
+Ap_CI = [x[6] for x in bin_res]
+
+fig, axs = plt.subplots(1, 2)
+ac.plot_ci_line(np.unique(rec_bins), np.stack(G_CI).T, axs[0], marker='o')
+ac.plot_ci_line(np.unique(rec_bins), np.stack(Ap_CI).T, axs[0], marker='o', color='b')
+axs[0].hlines(y=0, xmin=0, xmax=4, colors='black', linestyles='dotted')
+axs[0].set_title('G and A\' per recombination bin')
+
+
+# bval
+nanmask = ~np.isnan(ds.variant_bval.values)
+ds_bval = ds.sel(variants=nanmask)
+
+q = np.quantile(ds_bval.variant_bval.values, list(np.arange(1/5, 1, 1/5)))
+report.write("\n==========\nB-values quantiles:\n")
+print(q, file=report)
+
+rec_bins = np.digitize(ds_bval.variant_bval.values, q)
+
+bin_res = []
+for bin in np.unique(rec_bins):
+	bin_res.append(
+		ac.sg.ds2stats(
+			ds_bval.sel(variants=(rec_bins == bin)),
+			alpha_mask,
+			tile_size_variant=1000,
+		)
+	)
+
+# ( covmat, G, Ap, totvar, straps_cov, straps_G, straps_Ap, straps_totvar )
+G_CI = [x[5] for x in bin_res]
+Ap_CI = [x[6] for x in bin_res]
+
+ac.plot_ci_line(np.unique(rec_bins), np.stack(G_CI).T, axs[1], marker='o')
+ac.plot_ci_line(np.unique(rec_bins), np.stack(Ap_CI).T, axs[1], marker='o', color='b')
+axs[1].hlines(y=0, xmin=0, xmax=4, colors='black', linestyles='dotted')
+axs[1].set_title('G and A\' per B-value bin')
+
+fig.tight_layout()
+fig.savefig(snakemake.output['fig_bins'])
 
 
 # close report
