@@ -254,7 +254,7 @@ axs[0,0].set_xlim(times[0] + time_padding, times[-1] - time_padding)
 axs[0,0].set_ylim(top=1)
 axs[0,0].set_ylabel("Mean ancestry")
 axs[0,0].set_xlabel("Time point")
-axs[0,0].legend(bbox_to_anchor=(1, 1))
+axs[0,0].legend(loc='lower center', bbox_to_anchor=(0.5, 1), ncol=3)
 
 combined_ci = ac.combine_covmat_CIs(straps_cov, straps_cov_nc)
 scale_max = np.max(np.abs([np.nanmin(combined_ci[1] - np.diag(np.diag(combined_ci[1]))), np.nanmax(combined_ci[1] - np.diag(np.diag(combined_ci[1])))]))
