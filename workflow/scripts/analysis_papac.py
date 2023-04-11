@@ -116,6 +116,15 @@ var_drift = ac.solve_for_variances(
 )
 drift_err = ac.get_drift_err_matrix(var_drift, alphas)
 
+report.write("\n==========\nCovariances and drift component:\n")
+report.write("covmat:\n")
+print(covmat, file=report)
+report.write("admix_cov:\n")
+print(admix_cov, file=report)
+report.write("Drift err:\n")
+print(drift_err, file=report)
+
+
 k = covmat.shape[0]
 G = []
 G_nc = []
@@ -252,44 +261,58 @@ colors_oi = [
 
 times = np.array(times) # ensure it is an array
 
-fig, axs = plt.subplots(3, 2, figsize=(10, 8))
+fig, axs = plt.subplots(2, 2, figsize=(8, 6))
 
+k, l = (0, 1)
 fmts = ['-o', '-s', '-^']
 labels = ['EEF-like', 'WHG-like', 'Steppe-like']
 for i, pop in enumerate(ds.cohorts_ref_id.values):
-    axs[0,0].plot(times, Q[:,i], fmts[i], label=labels[i], color=colors_oi[i])
-axs[0,0].set_xlim(times[0] + time_padding, times[-1] - time_padding)
-axs[0,0].set_ylim(top=1)
-axs[0,0].set_ylabel("Mean ancestry")
-axs[0,0].set_xlabel("Time point")
-axs[0,0].legend(loc='lower center', bbox_to_anchor=(0.5, 1), ncol=3)
+    axs[k, l].plot(times, Q[:,i], fmts[i], label=labels[i], color=colors_oi[i])
+axs[k, l].set_xlim(times[0] + time_padding, times[-1] - time_padding)
+axs[k, l].set_ylim(top=1)
+axs[k, l].set_ylabel("Mean ancestry")
+axs[k, l].set_xlabel("Time (gen. BP)")
+axs[k, l].legend(loc='lower center', bbox_to_anchor=(0.5, 1), ncol=3)
+axs[k, l].set_title("B", loc='left', fontdict={'fontweight': 'bold'})
 
-combined_ci = ac.combine_covmat_CIs(straps_cov, straps_cov_nc)
-scale_max = np.max(np.abs([np.nanmin(combined_ci[1] - np.diag(np.diag(combined_ci[1]))), np.nanmax(combined_ci[1] - np.diag(np.diag(combined_ci[1])))]))
-ac.plot_covmat_ci(combined_ci, axs[0, 1], scale_max)
-axs[0,1].set_title('covariance matrix (raw lower, corrected upper)')
+# combined_ci = ac.combine_covmat_CIs(straps_cov, straps_cov_nc)
+# scale_max = np.max(np.abs([np.nanmin(combined_ci[1] - np.diag(np.diag(combined_ci[1]))), np.nanmax(combined_ci[1] - np.diag(np.diag(combined_ci[1])))]))
+# ac.plot_covmat_ci(combined_ci, axs[0, 1], scale_max)
+# axs[0,1].set_title('covariance matrix (raw lower, corrected upper)')
 
-ac.cov_lineplot(times, straps_cov_nc, axs[1, 0], colors=colors_oi, time_padding=time_padding, d=50, marker='o')
-axs[1, 0].set_ylabel('raw covariance (without bias)')
-ac.cov_lineplot(times, straps_cov, axs[1, 1], colors=colors_oi, time_padding=time_padding, d=50, marker='o', ylim=axs[1, 0].get_ylim())
-axs[1, 1].set_ylabel('admixture corrected covariance')
+k, l = (0, 0)
+ac.cov_lineplot(times, straps_cov_nc, axs[k, l], colors=colors_oi, time_padding=time_padding, d=50, marker='o')
+axs[k, l].set_ylabel("Cov($\\Delta p_i$, $\\Delta p_t$)")
+axs[k, l].set_xlabel('t')
+axs[k, l].set_title('Before admix. correction')
+axs[k, l].set_title("A", loc='left', fontdict={'fontweight': 'bold'})
+axs[k, l].legend(loc='lower center', bbox_to_anchor=(0.5, 1), title="$\\Delta p_i$", ncol=3)
 
-ac.plot_ci_line(times[1:], np.stack(straps_totvar).T, ax=axs[2, 0], color='black', marker='o')
-axs[2, 0].set_xlim(times[1] + time_padding, times[-1] - time_padding)
-axs[2, 0].set_ylim(0)
-axs[2, 0].set_ylabel('Total variance (t)')
+k, l = (1, 0)
+ac.cov_lineplot(times, straps_cov, axs[k, l], colors=colors_oi, time_padding=time_padding, d=50, marker='o', ylim=axs[1, 0].get_ylim())
+axs[k, l].set_ylabel("Cov($\\Delta p_i$, $\\Delta p_t$)")
+axs[k, l].set_xlabel('t')
+axs[k, l].set_title('After admix. correction')
+axs[k, l].set_title("C", loc='left', fontdict={'fontweight': 'bold'})
 
+# ac.plot_ci_line(times[1:], np.stack(straps_totvar).T, ax=axs[2, 0], color='black', marker='o')
+# axs[2, 0].set_xlim(times[1] + time_padding, times[-1] - time_padding)
+# axs[2, 0].set_ylim(0)
+# axs[2, 0].set_ylabel('Total variance (t)')
+
+k, l = (1, 1)
 x_shift = 50
-ac.plot_ci_line(times[1:] + x_shift, np.stack(straps_G_nc).T, ax=axs[2, 1], linestyle='dashed', marker='o')
-ac.plot_ci_line(times[1:], np.stack(straps_G).T, ax=axs[2, 1], marker='o')
-ac.plot_ci_line(times[1:] - x_shift, np.stack(straps_Ap).T, ax=axs[2, 1], color='blue', marker='s')
-axs[2, 1].set_xlim(times[1] + time_padding, times[-1] - time_padding)
-axs[2, 1].hlines(y=0, xmin=times[-1] - time_padding, xmax=times[1] + time_padding, colors='black', linestyles='dotted')
-axs[2, 1].set_xlabel('time')
-axs[2, 1].set_ylabel("G(t) or A'(t)")
+ac.plot_ci_line(times[1:] + x_shift, np.stack(straps_G_nc).T, ax=axs[k, l], linestyle='dashed', marker='o', label='G_nc')
+ac.plot_ci_line(times[1:], np.stack(straps_G).T, ax=axs[k, l], marker='o', label='G')
+ac.plot_ci_line(times[1:] - x_shift, np.stack(straps_Ap).T, ax=axs[k, l], color='blue', marker='s', label='A\'')
+axs[k, l].set_xlim(times[1] + time_padding, times[-1] - time_padding)
+axs[k, l].hlines(y=0, xmin=times[-1] - time_padding, xmax=times[1] + time_padding, colors='black', linestyles='dotted')
+axs[k, l].set_xlabel('time')
+axs[k, l].set_ylabel("G(t) or A'(t)")
+axs[k, l].legend(loc='center left', bbox_to_anchor=(1, 0.5))
+axs[k, l].set_title("D", loc='left', fontdict={'fontweight': 'bold'})
 
 fig.tight_layout()
-
 fig.savefig(snakemake.output['fig'])
 
 
