@@ -261,7 +261,7 @@ colors_oi = [
 
 times = np.array(times) # ensure it is an array
 
-fig, axs = plt.subplots(2, 2, figsize=(8, 6))
+fig, axs = plt.subplots(2, 2, figsize=(10, 8))
 
 k, l = (0, 1)
 fmts = ['-o', '-s', '-^']
@@ -271,8 +271,8 @@ for i, pop in enumerate(ds.cohorts_ref_id.values):
 axs[k, l].set_xlim(times[0] + time_padding, times[-1] - time_padding)
 axs[k, l].set_ylim(top=1)
 axs[k, l].set_ylabel("Mean ancestry")
-axs[k, l].set_xlabel("Time (gen. BP)")
-axs[k, l].legend(loc='lower center', bbox_to_anchor=(0.5, 1), ncol=3)
+axs[k, l].set_xlabel("Time (years BP)")
+axs[k, l].legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=3)
 axs[k, l].set_title("B", loc='left', fontdict={'fontweight': 'bold'})
 
 # combined_ci = ac.combine_covmat_CIs(straps_cov, straps_cov_nc)
@@ -280,20 +280,23 @@ axs[k, l].set_title("B", loc='left', fontdict={'fontweight': 'bold'})
 # ac.plot_covmat_ci(combined_ci, axs[0, 1], scale_max)
 # axs[0,1].set_title('covariance matrix (raw lower, corrected upper)')
 
+x_shift = 50
 k, l = (0, 0)
-ac.cov_lineplot(times, straps_cov_nc, axs[k, l], colors=colors_oi, time_padding=time_padding, d=50, marker='o')
+ac.cov_lineplot(times, straps_cov_nc, axs[k, l], colors=colors_oi, time_padding=time_padding, d=x_shift, marker='o')
+axs[k, l].set_xlim(times[1] + x_shift + time_padding, times[-1] - x_shift - time_padding)
 axs[k, l].set_ylabel("Cov($\\Delta p_i$, $\\Delta p_t$)")
 axs[k, l].set_xlabel('t')
 axs[k, l].set_title('Before admix. correction')
 axs[k, l].set_title("A", loc='left', fontdict={'fontweight': 'bold'})
-axs[k, l].legend(loc='lower center', bbox_to_anchor=(0.5, 1), title="$\\Delta p_i$", ncol=3)
 
 k, l = (1, 0)
-ac.cov_lineplot(times, straps_cov, axs[k, l], colors=colors_oi, time_padding=time_padding, d=50, marker='o', ylim=axs[1, 0].get_ylim())
+ac.cov_lineplot(times, straps_cov, axs[k, l], colors=colors_oi, time_padding=time_padding, d=x_shift, marker='o', ylim=axs[0, 0].get_ylim())
+axs[k, l].set_xlim(times[1] + x_shift + time_padding, times[-1] - x_shift - time_padding)
 axs[k, l].set_ylabel("Cov($\\Delta p_i$, $\\Delta p_t$)")
 axs[k, l].set_xlabel('t')
 axs[k, l].set_title('After admix. correction')
 axs[k, l].set_title("C", loc='left', fontdict={'fontweight': 'bold'})
+axs[k, l].legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), title="$\\Delta p_i$", ncol=3)
 
 # ac.plot_ci_line(times[1:], np.stack(straps_totvar).T, ax=axs[2, 0], color='black', marker='o')
 # axs[2, 0].set_xlim(times[1] + time_padding, times[-1] - time_padding)
@@ -301,15 +304,14 @@ axs[k, l].set_title("C", loc='left', fontdict={'fontweight': 'bold'})
 # axs[2, 0].set_ylabel('Total variance (t)')
 
 k, l = (1, 1)
-x_shift = 50
 ac.plot_ci_line(times[1:] + x_shift, np.stack(straps_G_nc).T, ax=axs[k, l], linestyle='dashed', marker='o', label='G_nc')
 ac.plot_ci_line(times[1:], np.stack(straps_G).T, ax=axs[k, l], marker='o', label='G')
 ac.plot_ci_line(times[1:] - x_shift, np.stack(straps_Ap).T, ax=axs[k, l], color='blue', marker='s', label='A\'')
-axs[k, l].set_xlim(times[1] + time_padding, times[-1] - time_padding)
+axs[k, l].set_xlim(times[1] + x_shift + time_padding, times[-1] - x_shift - time_padding)
 axs[k, l].hlines(y=0, xmin=times[-1] - time_padding, xmax=times[1] + time_padding, colors='black', linestyles='dotted')
-axs[k, l].set_xlabel('time')
-axs[k, l].set_ylabel("G(t) or A'(t)")
-axs[k, l].legend(loc='center left', bbox_to_anchor=(1, 0.5))
+axs[k, l].set_xlabel('t')
+axs[k, l].set_ylabel("Proportion of variance ($p_t - p_{5606}$)")
+axs[k, l].legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=3)
 axs[k, l].set_title("D", loc='left', fontdict={'fontweight': 'bold'})
 
 fig.tight_layout()
