@@ -273,7 +273,7 @@ fig, axs = plt.subplots(2, 2, figsize=(10, 8))
 
 k, l = (0, 1)
 fmts = ['-o', '-s', '-^']
-labels = ['EEF-like', 'WHG-like', 'Steppe-like']
+labels = ['WHG-like', 'EEF-like', 'Steppe-like']
 for i, pop in enumerate(ds.cohorts_ref_id.values):
     axs[k, l].plot(times, Q[:,i], fmts[i], label=labels[i], color=colors_oi[i])
 axs[k, l].set_xlim(times[0] + time_padding, times[-1] - time_padding)
@@ -321,6 +321,9 @@ axs[k, l].set_xlabel('t')
 axs[k, l].set_ylabel("Proportion of variance ($p_t - p_{5424}$)")
 axs[k, l].legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=3)
 axs[k, l].set_title("D", loc='left', fontdict={'fontweight': 'bold'})
+for ci, t in zip(straps_G, times[1:]):
+    if ci[0]*ci[2] > 0:
+        axs[k, l].annotate("*", xy=(t, 0.1))
 
 fig.tight_layout()
 fig.savefig(snakemake.output['fig'])
@@ -334,6 +337,12 @@ ds_rate = ds.sel(variants=nanmask)
 
 q = np.quantile(ds_rate.variant_rate.values, list(np.arange(1/5, 1, 1/5)))
 report.write("\n==========\nRecombination quantiles:\n")
+min, max = (
+    np.min(ds_rate.variant_rate.values),
+    np.max(ds_rate.variant_rate.values)
+)
+print(f"min: {min}", file=report)
+print(f"max: {max}", file=report)
 print(q, file=report)
 
 rec_bins = np.digitize(ds_rate.variant_rate.values, q)
@@ -381,6 +390,12 @@ ds_bval = ds.sel(variants=nanmask)
 
 q = np.quantile(ds_bval.variant_bval.values, list(np.arange(1/5, 1, 1/5)))
 report.write("\n==========\nB-values quantiles:\n")
+min, max = (
+    np.min(ds_rate.variant_bval.values),
+    np.max(ds_rate.variant_bval.values)
+)
+print(f"min: {min}", file=report)
+print(f"max: {max}", file=report)
 print(q, file=report)
 
 rec_bins = np.digitize(ds_bval.variant_bval.values, q)
