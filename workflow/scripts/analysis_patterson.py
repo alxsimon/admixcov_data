@@ -70,6 +70,16 @@ times = [np.mean(ds.sample_date_bp.values[mask]) for mask in ds.mask_cohorts.val
 report.write("\n==========\nMean times:\n")
 print(times, file=report)
 
+report.write("\n==========\nSample sizes:\n")
+print(f"Samples: {[x.sum() for x in ds.mask_cohorts.values]}", file=report)
+print(f"for {cohorts}", file=report)
+print(f"Refs: {[x.sum() for x in ds.mask_cohorts_ref.values]}", file=report)
+print(f"for {cohorts_ref}", file=report)
+
+report.write("\n==========\nNon-missing data means:\n")
+print(f"Samples: {np.mean(ds.variant_count_nonmiss.values, axis=1)}", file=report)
+print(f"Refs: {np.mean(ds.variant_count_nonmiss_ref.values, axis=1)}", file=report)
+
 geno = ds.call_genotype.values[:,:,0].T.astype(float)
 geno[geno == -1] = np.nan
 

@@ -65,6 +65,16 @@ times = [np.mean(ds.sample_date_bp.values[mask]) for mask in ds.mask_cohorts.val
 report.write("\n==========\nMean times:\n")
 print(times, file=report)
 
+report.write("\n==========\nSample sizes:\n")
+print(f"Samples: {[x.sum() for x in ds.mask_cohorts.values]}", file=report)
+print(f"for {cohorts}", file=report)
+print(f"Refs: {[x.sum() for x in ds.mask_cohorts_ref.values]}", file=report)
+print(f"for {cohorts_ref}", file=report)
+
+report.write("\n==========\nNon-missing data means:\n")
+print(f"Samples: {np.mean(ds.variant_count_nonmiss.values, axis=1)}", file=report)
+print(f"Refs: {np.mean(ds.variant_count_nonmiss_ref.values, axis=1)}", file=report)
+
 geno = ds.call_genotype.values[:,:,0].T.astype(float)
 geno[geno == -1] = np.nan
 
@@ -265,9 +275,9 @@ fig, axs = plt.subplots(2, 2, figsize=(10, 8))
 
 k, l = (0, 1)
 fmts = ['-o', '-s', '-^']
-labels = ['EEF-like', 'WHG-like', 'Steppe-like']
-for i, pop in zip([1, 0, 2], ds.cohorts_ref_id.values): # So this fit the UK colors
-    axs[k, l].plot(times, Q[:,i], fmts[i], label=labels[i], color=colors_oi[i])
+labels = ['WHG-like', 'EEF-like', 'Steppe-like']
+for i, j in zip([0, 1, 2], [1, 0, 2]): # So this fit the UK dataset order
+    axs[k, l].plot(times, Q[:,j], fmts[i], label=labels[i], color=colors_oi[i])
 axs[k, l].set_xlim(times[0] + time_padding, times[-1] - time_padding)
 axs[k, l].set_ylim(top=1)
 axs[k, l].set_ylabel("Mean ancestry")
