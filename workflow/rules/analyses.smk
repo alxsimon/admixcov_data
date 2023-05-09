@@ -6,6 +6,7 @@ rule analysis_patterson:
 		fig = 'results/Patterson2022/fig_Patterson2022_main.pdf',
 		fig_bins_G = 'results/Patterson2022/fig_Patterson2022_bins_G.pdf',
 		fig_bins_var = 'results/Patterson2022/fig_Patterson2022_bins_var.pdf',
+		matrix_data = 'results/Patterson2022/matrix_Patterson2022.pickle',
 	conda:
 		"../envs/py-env.yaml"
 	script:
@@ -19,7 +20,19 @@ rule analysis_papac:
 		fig = 'results/Papac2021/fig_Papac2021_main.pdf',
 		fig_bins_G = 'results/Papac2021/fig_Papac2021_bins_G.pdf',
 		fig_bins_var = 'results/Papac2021/fig_Papac2021_bins_var.pdf',
+		matrix_data = 'results/Papac2021/matrix_Papac2021.pickle',
 	conda:
 		"../envs/py-env.yaml"
 	script:
 		'../scripts/analysis_papac.py'
+
+rule figure_matrices:
+	input:
+		uk = 'results/Patterson2022/matrix_Patterson2022.pickle',
+		bo = 'results/Papac2021/matrix_Papac2021.pickle',
+	output:
+		fig = 'results/fig_matrices.pdf',
+	conda:
+		"../envs/py-env.yaml"
+	script:
+		'../scripts/figure_matrices.py'

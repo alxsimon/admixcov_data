@@ -14,3 +14,4 @@ rule all:
 		rules.prepare_maps.output,
 		rules.analysis_patterson.output,
 		rules.analysis_papac.output,
+		rules.figure_matrices.output,

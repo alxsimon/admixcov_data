@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import dask
+import pickle
 
 report = open(snakemake.output['report'], 'w')
 
@@ -443,6 +444,14 @@ fig1.savefig(snakemake.output['fig_bins_G'])
 handles, labels = axs2[0].get_legend_handles_labels()
 fig2.legend(handles, labels, loc='outside right upper')
 fig2.savefig(snakemake.output['fig_bins_var'])
+
+
+matrix_data = {
+    'straps_cov_nc': straps_cov_nc,
+    'times': times,
+}
+with open(snakemake.output['matrix_data'], 'wb') as fw:
+    pickle.dump(matrix_data, fw)
 
 
 #==============
