@@ -12,4 +12,4 @@ dependencies:
   - tskit=0.5.4 # only needed for py-admixcov
   - pip
   - pip:
-    - git+https://github.com/alxsimon/py-admixcov.git@c3b4d64
+    - git+https://github.com/alxsimon/py-admixcov.git@2543a76

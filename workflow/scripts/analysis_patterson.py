@@ -323,7 +323,7 @@ axs[k, l].legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), title="$\\Delt
 # axs[k, l].set_ylabel('Total variance (t)')
 
 k, l = (1, 1)
-ac.plot_ci_line(times[1:] + x_shift, np.stack(straps_G_nc).T, ax=axs[k, l], linestyle='dashed', marker='o', label='G_nc')
+ac.plot_ci_line(times[1:] + x_shift, np.stack(straps_G_nc).T, ax=axs[k, l], linestyle='dashed', marker='o', label='$G_{nc}$')
 ac.plot_ci_line(times[1:], np.stack(straps_G).T, ax=axs[k, l], marker='o', label='G')
 ac.plot_ci_line(times[1:] - x_shift, np.stack(straps_Ap).T, ax=axs[k, l], color='blue', marker='s', label='A\'')
 axs[k, l].set_xlim(times[1] + x_shift + time_padding, times[-1] - x_shift - time_padding)
@@ -368,12 +368,13 @@ for bin in np.unique(rec_bins):
 		)
 	)
 
-# ( covmat, G, Ap, totvar, straps_cov, straps_G, straps_Ap, straps_totvar )
+# ( covmat, G, Ap, totvar, straps_cov, straps_G, straps_Ap, straps_totvar, hz )
 G_CI = [x[5] for x in bin_res]
 Ap_CI = [x[6] for x in bin_res]
 
-fig1, axs1 = plt.subplots(1, 2, figsize=(10, 5), layout='constrained')
-fig2, axs2 = plt.subplots(1, 2, figsize=(10, 5), layout='constrained')
+fig1, axs1 = plt.subplots(1, 2, figsize=(10, 5), layout='constrained') # G
+fig2, axs2 = plt.subplots(1, 2, figsize=(10, 5), layout='constrained') # individual Var
+fig3, axs3 = plt.subplots(1, 2, figsize=(10, 5), layout='constrained') # totvar
 
 ac.plot_ci_line(np.unique(rec_bins), np.stack(G_CI).T, axs1[0], marker='o', label='G')
 ac.plot_ci_line(np.unique(rec_bins), np.stack(Ap_CI).T, axs1[0], marker='o', color='b', label='A\'')
@@ -382,18 +383,28 @@ axs1[0].set_xlabel('Recombination bin')
 axs1[0].set_ylabel('Proportion of variance')
 
 covmats = [x[4] for x in bin_res]
+# variances devided by half hz
 vardiag_bins_CIs = [
 	(
-		np.array([C[0][i,i] for C in covmats]),
-		np.array([C[1][i,i] for C in covmats]),
-		np.array([C[2][i,i] for C in covmats]),
+		np.array([C[0][i,i] / bin_res[j][8][i] for j, C in enumerate(covmats)]),
+		np.array([C[1][i,i] / bin_res[j][8][i] for j, C in enumerate(covmats)]),
+		np.array([C[2][i,i] / bin_res[j][8][i] for j, C in enumerate(covmats)]),
 	)
 	for i in range(6)]
 for i, ci in enumerate(vardiag_bins_CIs):
-	ac.plot_ci_line(np.unique(rec_bins) + 0.1 * i, ci, axs2[0], marker='o', label=f'Var[t{i}, t{i+1}]', color=colors_oi[i])
+	ac.plot_ci_line(np.unique(rec_bins) + 0.1 * i, ci, axs2[0], marker='o', label=f'p_{int(times[i])}', color=colors_oi[i])
 axs2[0].set_xlabel('Recombination bin')
-axs2[0].set_ylabel('Variance of time interval')
+axs2[0].set_ylabel('$Var(\Delta p_t) / p_t(1 - p_t)$')
 axs2[0].hlines(y=0, xmin=0, xmax=4, color='black', linestyles='dotted')
+
+var_CI = [x[7] for x in bin_res]
+ac.plot_ci_line(
+    np.unique(rec_bins),
+    np.stack(var_CI).T / np.stack([x[8][0] for x in bin_res]),
+    axs3[0], marker='o',
+)
+axs3[0].set_xlabel('Recombination bin')
+axs3[0].set_ylabel('Total variance $/ p(1 - p)$')
 
 # bval
 nanmask = ~np.isnan(ds.variant_bval.values)
@@ -421,7 +432,7 @@ for bin in np.unique(rec_bins):
 		)
 	)
 
-# ( covmat, G, Ap, totvar, straps_cov, straps_G, straps_Ap, straps_totvar )
+# ( covmat, G, Ap, totvar, straps_cov, straps_G, straps_Ap, straps_totvar, hz )
 G_CI = [x[5] for x in bin_res]
 Ap_CI = [x[6] for x in bin_res]
 
@@ -432,27 +443,40 @@ axs1[1].set_xlabel('B-value bin')
 axs1[1].set_ylabel('Proportion of variance')
 
 covmats = [x[4] for x in bin_res]
+# variances devided by half hz
 vardiag_bins_CIs = [
 	(
-		np.array([C[0][i,i] for C in covmats]),
-		np.array([C[1][i,i] for C in covmats]),
-		np.array([C[2][i,i] for C in covmats]),
+		np.array([C[0][i,i] / bin_res[j][8][i] for j, C in enumerate(covmats)]),
+		np.array([C[1][i,i] / bin_res[j][8][i] for j, C in enumerate(covmats)]),
+		np.array([C[2][i,i] / bin_res[j][8][i] for j, C in enumerate(covmats)]),
 	)
 	for i in range(len(times) - 1)]
 for i, ci in enumerate(vardiag_bins_CIs):
-	ac.plot_ci_line(np.unique(rec_bins) + 0.1 * i, ci, axs2[1], marker='o', label=f'Var[t{i}, t{i+1}]', color=colors_oi[i])
+	ac.plot_ci_line(np.unique(rec_bins) + 0.1 * i, ci, axs2[1], marker='o', label=f'p_{int(times[i])}', color=colors_oi[i])
 axs2[1].set_xlabel('B-value bin')
-axs2[1].set_ylabel('Variance of time interval')
+axs2[1].set_ylabel('$Var(\Delta p_t) / p_t(1 - p_t)$')
 axs2[1].hlines(y=0, xmin=0, xmax=4, color='black', linestyles='dotted')
+
+var_CI = [x[7] for x in bin_res]
+ac.plot_ci_line(
+    np.unique(rec_bins),
+    np.stack(var_CI).T / np.stack([x[8][0] for x in bin_res]),
+    axs3[1], marker='o',
+)
+axs3[1].set_xlabel('B-value bin')
+axs3[1].set_ylabel('Total variance $/ p(1 - p)$')
+
+#======
 
 handles, labels = axs1[0].get_legend_handles_labels()
 fig1.legend(handles, labels, loc='outside upper left', ncols=2)
 fig1.savefig(snakemake.output['fig_bins_G'])
 
 handles, labels = axs2[0].get_legend_handles_labels()
-fig2.legend(handles, labels, loc='outside right upper')
+fig2.legend(handles, labels, loc='outside right upper', title='$p_t$')
 fig2.savefig(snakemake.output['fig_bins_var'])
 
+fig3.savefig(snakemake.output['fig_bins_totvar'])
 
 matrix_data = {
     'straps_cov_nc': straps_cov_nc,
