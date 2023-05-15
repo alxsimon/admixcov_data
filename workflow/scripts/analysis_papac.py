@@ -396,7 +396,7 @@ ac.plot_ci_line(
     axs3[0], marker='o',
 )
 axs3[0].set_xlabel('Recombination bin')
-axs3[0].set_ylabel('$Total variance / p(1 - p)$')
+axs3[0].set_ylabel('Total variance $/ p(1 - p)$')
 
 # bval
 nanmask = ~np.isnan(ds.variant_bval.values)
