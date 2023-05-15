@@ -348,13 +348,13 @@ print(f"min: {min}", file=report)
 print(f"max: {max}", file=report)
 print(q, file=report)
 
-rec_bins = np.digitize(ds_rate.variant_rate.values, q)
+bins = np.digitize(ds_rate.variant_rate.values, q)
 
 bin_res = []
-for bin in np.unique(rec_bins):
+for bin in np.unique(bins):
 	bin_res.append(
 		ac.sg.ds2stats(
-			ds_rate.sel(variants=(rec_bins == bin)),
+			ds_rate.sel(variants=(bins == bin)),
 			alpha_mask,
 			tile_size_variant=1000,
 		)
@@ -367,9 +367,10 @@ Ap_CI = [x[6] for x in bin_res]
 fig1, axs1 = plt.subplots(1, 2, figsize=(10, 5), layout='constrained') # G
 fig2, axs2 = plt.subplots(1, 2, figsize=(10, 5), layout='constrained') # individual Var
 fig3, axs3 = plt.subplots(1, 2, figsize=(10, 5), layout='constrained') # totvar
+fig4, axs4 = plt.subplots(1, 2, figsize=(10, 5), layout='constrained') # sumvar
 
-ac.plot_ci_line(np.unique(rec_bins), np.stack(G_CI).T, axs1[0], marker='o', label='G')
-ac.plot_ci_line(np.unique(rec_bins), np.stack(Ap_CI).T, axs1[0], marker='o', color='b', label='A\'')
+ac.plot_ci_line(np.unique(bins), np.stack(G_CI).T, axs1[0], marker='o', label='G')
+ac.plot_ci_line(np.unique(bins), np.stack(Ap_CI).T, axs1[0], marker='o', color='b', label='A\'')
 axs1[0].hlines(y=0, xmin=0, xmax=4, color='black', linestyles='dotted')
 axs1[0].set_xlabel('Recombination bin')
 axs1[0].set_ylabel('Proportion of variance')
@@ -384,19 +385,28 @@ vardiag_bins_CIs = [
 	)
 	for i in range(6)]
 for i, ci in enumerate(vardiag_bins_CIs):
-	ac.plot_ci_line(np.unique(rec_bins) + 0.1 * i, ci, axs2[0], marker='o', label=f'p_{int(times[i])}', color=colors_oi[i])
+	ac.plot_ci_line(np.unique(bins) + 0.1 * i, ci, axs2[0], marker='o', label=f'p_{int(times[i])}', color=colors_oi[i])
 axs2[0].set_xlabel('Recombination bin')
 axs2[0].set_ylabel('$Var(\Delta p_t) / p_t(1 - p_t)$')
 axs2[0].hlines(y=0, xmin=0, xmax=4, color='black', linestyles='dotted')
 
 var_CI = [x[7] for x in bin_res]
 ac.plot_ci_line(
-    np.unique(rec_bins),
+    np.unique(bins),
     np.stack(var_CI).T / np.stack([x[8][0] for x in bin_res]),
     axs3[0], marker='o',
 )
 axs3[0].set_xlabel('Recombination bin')
 axs3[0].set_ylabel('Total variance $/ p(1 - p)$')
+
+sum_var = [(np.diag(x[4][0]).sum(), np.diag(x[4][1]).sum(), np.diag(x[4][2]).sum()) for x in bin_res]
+ac.plot_ci_line(
+    np.unique(bins),
+    np.stack(sum_var).T,
+    axs4[0], marker='o',
+)
+axs4[0].set_xlabel('Recombination bin')
+axs4[0].set_ylabel('Sum of variances')
 
 # bval
 nanmask = ~np.isnan(ds.variant_bval.values)
@@ -412,13 +422,13 @@ print(f"min: {min}", file=report)
 print(f"max: {max}", file=report)
 print(q, file=report)
 
-rec_bins = np.digitize(ds_bval.variant_bval.values, q)
+bins = np.digitize(ds_bval.variant_bval.values, q)
 
 bin_res = []
-for bin in np.unique(rec_bins):
+for bin in np.unique(bins):
 	bin_res.append(
 		ac.sg.ds2stats(
-			ds_bval.sel(variants=(rec_bins == bin)),
+			ds_bval.sel(variants=(bins == bin)),
 			alpha_mask,
 			tile_size_variant=1000,
 		)
@@ -428,8 +438,8 @@ for bin in np.unique(rec_bins):
 G_CI = [x[5] for x in bin_res]
 Ap_CI = [x[6] for x in bin_res]
 
-ac.plot_ci_line(np.unique(rec_bins), np.stack(G_CI).T, axs1[1], marker='o', label='G')
-ac.plot_ci_line(np.unique(rec_bins), np.stack(Ap_CI).T, axs1[1], marker='o', color='b', label='A\'')
+ac.plot_ci_line(np.unique(bins), np.stack(G_CI).T, axs1[1], marker='o', label='G')
+ac.plot_ci_line(np.unique(bins), np.stack(Ap_CI).T, axs1[1], marker='o', color='b', label='A\'')
 axs1[1].hlines(y=0, xmin=0, xmax=4, color='black', linestyles='dotted')
 axs1[1].set_xlabel('B-value bin')
 axs1[1].set_ylabel('Proportion of variance')
@@ -444,19 +454,28 @@ vardiag_bins_CIs = [
 	)
 	for i in range(len(times) - 1)]
 for i, ci in enumerate(vardiag_bins_CIs):
-	ac.plot_ci_line(np.unique(rec_bins) + 0.1 * i, ci, axs2[1], marker='o', label=f'p_{int(times[i])}', color=colors_oi[i])
+	ac.plot_ci_line(np.unique(bins) + 0.1 * i, ci, axs2[1], marker='o', label=f'p_{int(times[i])}', color=colors_oi[i])
 axs2[1].set_xlabel('B-value bin')
 axs2[1].set_ylabel('$Var(\Delta p_t) / p_t(1 - p_t)$')
 axs2[1].hlines(y=0, xmin=0, xmax=4, color='black', linestyles='dotted')
 
 var_CI = [x[7] for x in bin_res]
 ac.plot_ci_line(
-    np.unique(rec_bins),
+    np.unique(bins),
     np.stack(var_CI).T / np.stack([x[8][0] for x in bin_res]),
     axs3[1], marker='o',
 )
 axs3[1].set_xlabel('B-value bin')
 axs3[1].set_ylabel('Total variance $/ p(1 - p)$')
+
+sum_var = [(np.diag(x[4][0]).sum(), np.diag(x[4][1]).sum(), np.diag(x[4][2]).sum()) for x in bin_res]
+ac.plot_ci_line(
+    np.unique(bins),
+    np.stack(sum_var).T,
+    axs4[1], marker='o',
+)
+axs4[1].set_xlabel('B-value bin')
+axs4[1].set_ylabel('Sum of variances')
 
 #======
 
@@ -470,6 +489,9 @@ fig2.savefig(snakemake.output['fig_bins_var'])
 
 fig3.savefig(snakemake.output['fig_bins_totvar'])
 
+fig4.savefig(snakemake.output['fig_bins_sumvar'])
+
+#======
 matrix_data = {
     'straps_cov_nc': straps_cov_nc,
     'times': times,
