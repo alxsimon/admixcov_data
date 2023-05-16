@@ -405,16 +405,16 @@ ac.plot_ci_line(
     axs3[0], marker='o',
 )
 axs3[0].set_xlabel('Recombination bin')
-axs3[0].set_ylabel('Total variance $/ p(1 - p)$')
+axs3[0].set_ylabel('Total variance $/ p_0(1 - p_0)$')
 
 sum_var = [(np.diag(x[4][0]).sum(), np.diag(x[4][1]).sum(), np.diag(x[4][2]).sum()) for x in bin_res]
 ac.plot_ci_line(
     np.unique(bins),
-    np.stack(sum_var).T,
+    np.stack(sum_var).T / np.stack([x[8][0] for x in bin_res]),
     axs4[0], marker='o',
 )
 axs4[0].set_xlabel('Recombination bin')
-axs4[0].set_ylabel('Sum of variances')
+axs4[0].set_ylabel('Sum of variances $/ p_0(1 - p_0)$')
 
 # bval
 nanmask = ~np.isnan(ds.variant_bval.values)
@@ -474,18 +474,18 @@ ac.plot_ci_line(
     axs3[1], marker='o',
 )
 axs3[1].set_xlabel('B-value bin')
-axs3[1].set_ylabel('Total variance $/ p(1 - p)$')
+axs3[1].set_ylabel('Total variance $/ p_0(1 - p_0)$')
 
 sum_var = [(np.diag(x[4][0]).sum(), np.diag(x[4][1]).sum(), np.diag(x[4][2]).sum()) for x in bin_res]
 ac.plot_ci_line(
     np.unique(bins),
-    np.stack(sum_var).T,
+    np.stack(sum_var).T / np.stack([x[8][0] for x in bin_res]),
     axs4[1], marker='o',
 )
 axs4[1].set_xlabel('B-value bin')
-axs4[1].set_ylabel('Sum of variances')
+axs4[1].set_ylabel('Sum of variances $/ p_0(1 - p_0)$')
 
-#======
+#==============
 
 handles, labels = axs1[0].get_legend_handles_labels()
 fig1.legend(handles, labels, loc='outside upper left', ncols=2)
@@ -499,7 +499,7 @@ fig3.savefig(snakemake.output['fig_bins_totvar'])
 
 fig4.savefig(snakemake.output['fig_bins_sumvar'])
 
-#======
+#==============
 matrix_data = {
     'straps_cov_nc': straps_cov_nc,
     'times': times,
