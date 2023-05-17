@@ -481,11 +481,12 @@ ac.plot_ci_line(
     label='Total variance $/ p_0(1 - p_0)$',
 )
 axs3[1].set_xlabel('B-value bin')
+axs3[1].xaxis.set_major_locator(ticker.MultipleLocator(1))
 # axs3[1].set_ylabel('Total variance $/ p_0(1 - p_0)$')
 
 sum_var = [(np.diag(x[4][0]).sum(), np.diag(x[4][1]).sum(), np.diag(x[4][2]).sum()) for x in bin_res]
 ac.plot_ci_line(
-    np.unique(bins),
+    np.unique(bins) + 0.1,
     np.stack(sum_var).T / np.stack([x[8][0] for x in bin_res]),
     axs3[1], marker='s',
     color=colors_oi[1],
