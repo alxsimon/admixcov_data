@@ -2,8 +2,7 @@ import sgkit as sg
 import admixcov as ac
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
+import matplotlib.ticker as ticker
 import dask
 import pickle
 
@@ -403,19 +402,25 @@ ac.plot_ci_line(
     np.unique(bins),
     np.stack(var_CI).T / np.stack([x[8][0] for x in bin_res]),
     axs3[0], marker='o',
+    color=colors_oi[0],
+    label='Total variance $/ p_0(1 - p_0)$',
 )
 axs3[0].set_xlabel('Recombination bin')
-axs3[0].set_ylabel('Total variance $/ p_0(1 - p_0)$')
+axs3[0].xaxis.set_major_locator(ticker.MultipleLocator(1))
+# axs3[0].set_ylabel('Total variance $/ p_0(1 - p_0)$')
 
 sum_var = [(np.diag(x[4][0]).sum(), np.diag(x[4][1]).sum(), np.diag(x[4][2]).sum()) for x in bin_res]
 ac.plot_ci_line(
-    np.unique(bins),
+    np.unique(bins) + 0.1,
     np.stack(sum_var).T / np.stack([x[8][0] for x in bin_res]),
-    axs4[0], marker='o',
+    axs3[0], marker='s',
+    color=colors_oi[1],
+    label='Sum of variances $/ p_0(1 - p_0)$',
 )
-axs4[0].set_xlabel('Recombination bin')
-axs4[0].set_ylabel('Sum of variances $/ p_0(1 - p_0)$')
+# axs4[0].set_xlabel('Recombination bin')
+# axs4[0].set_ylabel('Sum of variances $/ p_0(1 - p_0)$')
 
+#==========
 # bval
 nanmask = ~np.isnan(ds.variant_bval.values)
 ds_bval = ds.sel(variants=nanmask)
@@ -472,32 +477,38 @@ ac.plot_ci_line(
     np.unique(bins),
     np.stack(var_CI).T / np.stack([x[8][0] for x in bin_res]),
     axs3[1], marker='o',
+    color=colors_oi[0],
+    label='Total variance $/ p_0(1 - p_0)$',
 )
 axs3[1].set_xlabel('B-value bin')
-axs3[1].set_ylabel('Total variance $/ p_0(1 - p_0)$')
+# axs3[1].set_ylabel('Total variance $/ p_0(1 - p_0)$')
 
 sum_var = [(np.diag(x[4][0]).sum(), np.diag(x[4][1]).sum(), np.diag(x[4][2]).sum()) for x in bin_res]
 ac.plot_ci_line(
     np.unique(bins),
     np.stack(sum_var).T / np.stack([x[8][0] for x in bin_res]),
-    axs4[1], marker='o',
+    axs3[1], marker='s',
+    color=colors_oi[1],
+    label='Sum of variances $/ p_0(1 - p_0)$',
 )
-axs4[1].set_xlabel('B-value bin')
-axs4[1].set_ylabel('Sum of variances $/ p_0(1 - p_0)$')
+# axs4[1].set_xlabel('B-value bin')
+# axs4[1].set_ylabel('Sum of variances $/ p_0(1 - p_0)$')
 
 #==============
 
 handles, labels = axs1[0].get_legend_handles_labels()
-fig1.legend(handles, labels, loc='outside upper left', ncols=2)
+fig1.legend(handles, labels, loc='outside upper center', ncols=2)
 fig1.savefig(snakemake.output['fig_bins_G'])
 
 handles, labels = axs2[0].get_legend_handles_labels()
 fig2.legend(handles, labels, loc='outside right upper', title='$p_t$')
 fig2.savefig(snakemake.output['fig_bins_var'])
 
+handles, labels = axs3[0].get_legend_handles_labels()
+fig3.legend(handles, labels, loc='outside upper center', ncols=2)
 fig3.savefig(snakemake.output['fig_bins_totvar'])
 
-fig4.savefig(snakemake.output['fig_bins_sumvar'])
+# fig4.savefig(snakemake.output['fig_bins_sumvar'])
 
 #==============
 matrix_data = {
