@@ -91,6 +91,7 @@ ds['cohorts_ref_id'] = (['cohorts_ref'], cohorts_ref)
 ds = ds.unify_chunks()
 
 bmap = pd.read_csv(bval_table, sep="\t")
+bmap['bval'] = bmap['bval'] * 1e-3
 rmap = pd.read_csv(rval_table, sep="\t")
 
 def get_val(df, v_name, chr_idx, pos):
