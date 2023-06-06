@@ -144,19 +144,26 @@ print(drift_err, file=report)
 k = covmat.shape[0]
 G = []
 G_nc = []
+G_de = []
 Ap = []
 totvar = []
 for i in range(1, k + 1):
     totvar.append(np.sum(covmat[:i, :i]))
     G.append(
         ac.get_matrix_sum(
-            covmat[:i, :i] - admix_cov[:i, :i] - drift_err[:i, :i],
+            covmat[:i, :i] - admix_cov[:i, :i],
             include_diag=False, abs=False
         ) / totvar[-1]
     )
     G_nc.append(
         ac.get_matrix_sum(
             covmat[:i, :i],
+            include_diag=False, abs=False
+        ) / totvar[-1]
+    )
+    G_de.append(
+        ac.get_matrix_sum(
+            covmat[:i, :i] - admix_cov[:i, :i] - drift_err[:i, :i],
             include_diag=False, abs=False
         ) / totvar[-1]
     )
@@ -169,7 +176,9 @@ for i in range(1, k + 1):
 
 
 N_boot = 1e4
-tile_idxs = ac.sg.create_tile_idxs(ds, type='variant', size=1500)
+tile_idxs = ac.sg.create_tile_idxs(ds, type='variant', size=1_000)
+# tile_idxs = ac.sg.create_tile_idxs(ds, type='position', size=1_000_000)
+# tile_idxs = [t for t in tile_idxs if len(t) >= 100] # filter
 sizes = [x.size for x in tile_idxs] # Number of SNPs in tiles
 
 n_sample = ds.variant_count_nonmiss.values
@@ -192,15 +201,18 @@ tiled_admix_cov = np.stack([
     for idx in tile_idxs
 ])
 
-tiled_drift_err = [
+tiled_drift_err = np.stack([
     ac.get_drift_err_matrix(
         ac.solve_for_variances(np.diag(c - a), alphas),
         alphas,
     )
     for c, a in zip(tiled_cov, tiled_admix_cov)
-]
+])
 
 tiled_corr_cov = np.stack([
+    c - a for c, a in zip(tiled_cov, tiled_admix_cov)
+])
+tiled_corr_cov_de = np.stack([
     c - a - d for c, a, d in zip(tiled_cov, tiled_admix_cov, tiled_drift_err)
 ])
 
@@ -213,6 +225,7 @@ straps_cov = ac.bootstrap_stat(tiled_corr_cov, weights, N_boot)
 
 straps_G = []
 straps_G_nc = []
+straps_G_de = []
 straps_Ap = []
 straps_totvar = []
 k = tiled_cov.shape[1]
@@ -231,7 +244,7 @@ for i in range(1, k + 1):
             tmp_totvar,
             weights,
             N_boot,
-            statistic=G[i - 1],
+            # statistic=G[i - 1],
         )
     )
     straps_G_nc.append(
@@ -240,7 +253,16 @@ for i in range(1, k + 1):
             tmp_totvar,
             weights,
             N_boot,
-            statistic=G_nc[i - 1],
+            # statistic=G_nc[i - 1],
+        )
+    )
+    straps_G_de.append(
+        ac.bootstrap_ratio(
+            np.stack([ac.get_matrix_sum(c) for c in tiled_corr_cov_de[:, :i, :i]]),
+            tmp_totvar,
+            weights,
+            N_boot,
+            # statistic=G[i - 1],
         )
     )
     straps_Ap.append(
@@ -249,7 +271,7 @@ for i in range(1, k + 1):
             tmp_totvar,
             weights,
             N_boot,
-            statistic=Ap[i - 1],
+            # statistic=Ap[i - 1],
         )
     )
 
@@ -258,6 +280,8 @@ report.write("G:\n")
 print(straps_G, file=report)
 report.write("G_nc:\n")
 print(straps_G_nc, file=report)
+report.write("G_de:\n")
+print(straps_G_de, file=report)
 report.write("Ap:\n")
 print(straps_Ap, file=report)
 
@@ -279,7 +303,7 @@ colors_oi = [
 
 times = np.array(times) # ensure it is an array
 
-fig, axs = plt.subplots(2, 2, figsize=(10, 8))
+fig, axs = plt.subplots(2, 2, figsize=(10, 8), layout='constrained')
 
 k, l = (0, 1)
 fmts = ['-o', '-s', '-^']
@@ -323,10 +347,11 @@ axs[k, l].legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), title="$\\Delt
 
 k, l = (1, 1)
 ac.plot_ci_line(times[1:] + x_shift, np.stack(straps_G_nc).T, ax=axs[k, l], linestyle='dashed', marker='o', label='$G_{nc}$')
+ac.plot_ci_line(times[1:] + 2 * x_shift, np.stack(straps_G_de).T, ax=axs[k, l], linestyle='dashdot', marker='^', label='$G_{de}$')
 ac.plot_ci_line(times[1:], np.stack(straps_G).T, ax=axs[k, l], marker='o', label='G')
 ac.plot_ci_line(times[1:] - x_shift, np.stack(straps_Ap).T, ax=axs[k, l], color='blue', marker='s', label='A\'')
 axs[k, l].set_xlim(times[1] + x_shift + time_padding, times[-1] - x_shift - time_padding)
-axs[k, l].hlines(y=0, xmin=times[-1] - time_padding, xmax=times[1] + time_padding, colors='black', linestyles='dotted')
+axs[k, l].hlines(y=0, xmin=times[-1] - time_padding, xmax=times[1] + time_padding, colors='grey', linestyles='dotted')
 axs[k, l].set_xlabel('t')
 axs[k, l].set_ylabel("Proportion of variance ($p_t - p_{5424}$)")
 axs[k, l].legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=3)
@@ -335,8 +360,14 @@ for ci, t in zip(straps_G, times[1:]):
     if ci[0]*ci[2] > 0:
         axs[k, l].annotate("*", xy=(t, 0.1))
 
-fig.tight_layout()
 fig.savefig(snakemake.output['fig'])
+
+
+#==========
+# Do some reduced bootstrap to have a genome wide distribution
+# to compare to
+
+
 
 
 #================
@@ -363,18 +394,18 @@ for bin in np.unique(bins):
 		ac.sg.ds2stats(
 			ds_rate.sel(variants=(bins == bin)),
 			alpha_mask,
-			tile_size_variant=1000,
+            tile_type='variant',
+			tile_size=1_000,
 		)
 	)
 
-# ( covmat, G, Ap, totvar, straps_cov, straps_G, straps_Ap, straps_totvar, hz )
+# 
 G_CI = [x[5] for x in bin_res]
 Ap_CI = [x[6] for x in bin_res]
 
 fig1, axs1 = plt.subplots(1, 2, figsize=(10, 5), layout='constrained') # G
 fig2, axs2 = plt.subplots(1, 2, figsize=(10, 5), layout='constrained') # individual Var
-fig3, axs3 = plt.subplots(1, 2, figsize=(10, 5), layout='constrained') # totvar
-fig4, axs4 = plt.subplots(1, 2, figsize=(10, 5), layout='constrained') # sumvar
+fig3, axs3 = plt.subplots(2, 2, figsize=(10, 10), layout='constrained') # totvar
 
 ac.plot_ci_line(np.unique(bins), np.stack(G_CI).T, axs1[0], marker='o', label='G')
 ac.plot_ci_line(np.unique(bins), np.stack(Ap_CI).T, axs1[0], marker='o', color='b', label='A\'')
@@ -386,9 +417,9 @@ covmats = [x[4] for x in bin_res]
 # variances devided by half hz
 vardiag_bins_CIs = [
 	(
-		np.array([C[0][i,i] / bin_res[j][8][i] for j, C in enumerate(covmats)]),
-		np.array([C[1][i,i] / bin_res[j][8][i] for j, C in enumerate(covmats)]),
-		np.array([C[2][i,i] / bin_res[j][8][i] for j, C in enumerate(covmats)]),
+		np.array([C[0][i,i] / bin_res[j][13][i] for j, C in enumerate(covmats)]),
+		np.array([C[1][i,i] / bin_res[j][13][i] for j, C in enumerate(covmats)]),
+		np.array([C[2][i,i] / bin_res[j][13][i] for j, C in enumerate(covmats)]),
 	)
 	for i in range(6)]
 for i, ci in enumerate(vardiag_bins_CIs):
@@ -397,28 +428,65 @@ axs2[0].set_xlabel('Recombination bin')
 axs2[0].set_ylabel('$Var(\Delta p_t) / p_t(1 - p_t)$')
 axs2[0].hlines(y=0, xmin=0, xmax=4, color='black', linestyles='dotted')
 
-var_CI = [x[7] for x in bin_res]
+#   uncorrected
+# totvar
 ac.plot_ci_line(
     np.unique(bins),
-    np.stack(var_CI).T / np.stack([x[8][0] for x in bin_res]),
-    axs3[0], marker='o',
+    np.stack([x[7] for x in bin_res]).T,
+    axs3[0, 0], marker='o',
     color=colors_oi[0],
-    label='Total variance $/ p_0(1 - p_0)$',
+    label='Total variance',
 )
-axs3[0].set_xlabel('Recombination bin')
-axs3[0].xaxis.set_major_locator(ticker.MultipleLocator(1))
-# axs3[0].set_ylabel('Total variance $/ p_0(1 - p_0)$')
+axs3[0, 0].set_xlabel('Recombination bin')
+axs3[0, 0].xaxis.set_major_locator(ticker.MultipleLocator(1))
 
-sum_var = [(np.diag(x[4][0]).sum(), np.diag(x[4][1]).sum(), np.diag(x[4][2]).sum()) for x in bin_res]
+# sum var
 ac.plot_ci_line(
     np.unique(bins) + 0.1,
-    np.stack(sum_var).T / np.stack([x[8][0] for x in bin_res]),
-    axs3[0], marker='s',
+    np.stack([x[9] for x in bin_res]).T,
+    axs3[0, 0], marker='s',
     color=colors_oi[1],
-    label='Sum of variances $/ p_0(1 - p_0)$',
+    label='Sum of variances',
 )
-# axs4[0].set_xlabel('Recombination bin')
-# axs4[0].set_ylabel('Sum of variances $/ p_0(1 - p_0)$')
+
+# sum cov
+ac.plot_ci_line(
+    np.unique(bins) + 0.2,
+    np.stack([x[11] for x in bin_res]).T,
+    axs3[0, 0], marker='^',
+    color=colors_oi[2],
+    label='Sum of covariances',
+)
+
+#   corrected
+# totvar
+ac.plot_ci_line(
+    np.unique(bins),
+    np.stack([x[8] for x in bin_res]).T,
+    axs3[1, 0], marker='o',
+    color=colors_oi[0],
+    label='Total variance',
+)
+axs3[1, 0].set_xlabel('Recombination bin')
+axs3[1, 0].xaxis.set_major_locator(ticker.MultipleLocator(1))
+
+# sum var
+ac.plot_ci_line(
+    np.unique(bins) + 0.1,
+    np.stack([x[10] for x in bin_res]).T,
+    axs3[1, 0], marker='s',
+    color=colors_oi[1],
+    label='Sum of variances',
+)
+
+# sum cov
+ac.plot_ci_line(
+    np.unique(bins) + 0.2,
+    np.stack([x[12] for x in bin_res]).T,
+    axs3[1, 0], marker='^',
+    color=colors_oi[2],
+    label='Sum of covariances',
+)
 
 #==========
 # bval
@@ -443,11 +511,12 @@ for bin in np.unique(bins):
 		ac.sg.ds2stats(
 			ds_bval.sel(variants=(bins == bin)),
 			alpha_mask,
-			tile_size_variant=1000,
+            tile_type='variant',
+			tile_size=1_000,
 		)
 	)
 
-# ( covmat, G, Ap, totvar, straps_cov, straps_G, straps_Ap, straps_totvar, hz )
+# 
 G_CI = [x[5] for x in bin_res]
 Ap_CI = [x[6] for x in bin_res]
 
@@ -461,9 +530,9 @@ covmats = [x[4] for x in bin_res]
 # variances devided by half hz
 vardiag_bins_CIs = [
 	(
-		np.array([C[0][i,i] / bin_res[j][8][i] for j, C in enumerate(covmats)]),
-		np.array([C[1][i,i] / bin_res[j][8][i] for j, C in enumerate(covmats)]),
-		np.array([C[2][i,i] / bin_res[j][8][i] for j, C in enumerate(covmats)]),
+		np.array([C[0][i,i] / bin_res[j][13][i] for j, C in enumerate(covmats)]),
+		np.array([C[1][i,i] / bin_res[j][13][i] for j, C in enumerate(covmats)]),
+		np.array([C[2][i,i] / bin_res[j][13][i] for j, C in enumerate(covmats)]),
 	)
 	for i in range(len(times) - 1)]
 for i, ci in enumerate(vardiag_bins_CIs):
@@ -472,28 +541,65 @@ axs2[1].set_xlabel('B-value bin')
 axs2[1].set_ylabel('$Var(\Delta p_t) / p_t(1 - p_t)$')
 axs2[1].hlines(y=0, xmin=0, xmax=4, color='black', linestyles='dotted')
 
-var_CI = [x[7] for x in bin_res]
+#   uncorrected
+# totvar
 ac.plot_ci_line(
     np.unique(bins),
-    np.stack(var_CI).T / np.stack([x[8][0] for x in bin_res]),
-    axs3[1], marker='o',
+    np.stack([x[7] for x in bin_res]).T,
+    axs3[0, 1], marker='o',
     color=colors_oi[0],
-    label='Total variance $/ p_0(1 - p_0)$',
+    label='Total variance',
 )
-axs3[1].set_xlabel('B-value bin')
-axs3[1].xaxis.set_major_locator(ticker.MultipleLocator(1))
-# axs3[1].set_ylabel('Total variance $/ p_0(1 - p_0)$')
+axs3[0, 1].set_xlabel('B-value bin')
+axs3[0, 1].xaxis.set_major_locator(ticker.MultipleLocator(1))
 
-sum_var = [(np.diag(x[4][0]).sum(), np.diag(x[4][1]).sum(), np.diag(x[4][2]).sum()) for x in bin_res]
+# sum var
 ac.plot_ci_line(
     np.unique(bins) + 0.1,
-    np.stack(sum_var).T / np.stack([x[8][0] for x in bin_res]),
-    axs3[1], marker='s',
+    np.stack([x[9] for x in bin_res]).T,
+    axs3[0, 1], marker='s',
     color=colors_oi[1],
-    label='Sum of variances $/ p_0(1 - p_0)$',
+    label='Sum of variances',
 )
-# axs4[1].set_xlabel('B-value bin')
-# axs4[1].set_ylabel('Sum of variances $/ p_0(1 - p_0)$')
+
+# sum cov
+ac.plot_ci_line(
+    np.unique(bins) + 0.2,
+    np.stack([x[11] for x in bin_res]).T,
+    axs3[0, 1], marker='^',
+    color=colors_oi[2],
+    label='Sum of covariances',
+)
+
+#   corrected
+# totvar
+ac.plot_ci_line(
+    np.unique(bins),
+    np.stack([x[8] for x in bin_res]).T,
+    axs3[1, 1], marker='o',
+    color=colors_oi[0],
+    label='Total variance',
+)
+axs3[1, 1].set_xlabel('B-value bin')
+axs3[1, 1].xaxis.set_major_locator(ticker.MultipleLocator(1))
+
+# sum var
+ac.plot_ci_line(
+    np.unique(bins) + 0.1,
+    np.stack([x[10] for x in bin_res]).T,
+    axs3[1, 1], marker='s',
+    color=colors_oi[1],
+    label='Sum of variances',
+)
+
+# sum cov
+ac.plot_ci_line(
+    np.unique(bins) + 0.2,
+    np.stack([x[12] for x in bin_res]).T,
+    axs3[1, 1], marker='^',
+    color=colors_oi[2],
+    label='Sum of covariances',
+)
 
 #==============
 
@@ -505,11 +611,9 @@ handles, labels = axs2[0].get_legend_handles_labels()
 fig2.legend(handles, labels, loc='outside right upper', title='$p_t$')
 fig2.savefig(snakemake.output['fig_bins_var'])
 
-handles, labels = axs3[0].get_legend_handles_labels()
-fig3.legend(handles, labels, loc='outside upper center', ncols=2)
+handles, labels = axs3[0, 0].get_legend_handles_labels()
+fig3.legend(handles, labels, loc='outside upper center')
 fig3.savefig(snakemake.output['fig_bins_totvar'])
-
-# fig4.savefig(snakemake.output['fig_bins_sumvar'])
 
 #==============
 matrix_data = {
