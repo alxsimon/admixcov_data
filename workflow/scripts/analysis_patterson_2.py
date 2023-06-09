@@ -12,27 +12,54 @@ ds = sg.load_dataset(snakemake.input['zarr'])
 report.write("Dataset import:\n")
 print(ds.dims, file=report)
 
-# grouping
-time_periods_grouping = {
-    'Bohemia_N': ['Bohemia_N'],
-    'Bohemia_PE': ['Bohemia_PE'],
-    'Bohemia_EE': ['Bohemia_EE'],
-    'Bohemia_ME': ['Bohemia_ME'], # ['Bohemia_ME_Baden', 'Bohemia_ME_Rivnac', 'Bohemia_ME_GAC'],
-    'Bohemia_CW': ['Bohemia_CW_Early', 'Bohemia_CW_Late'],
-    'Bohemia_BB': ['Bohemia_BB_Early', 'Bohemia_BB_Late'],
-    'Bohemia_Unetice': ['Bohemia_Unetice_preClassical', 'Bohemia_Unetice_Classical'],
-}
-
-cohorts = list(time_periods_grouping.keys())
-cohorts_ref = [
-    "Anatolia_Neolithic",
-    "WHG",
-    "Yamnaya",
+cohorts = [
+    'England.and.Wales_N',
+    'England.and.Wales_C.EBA',
+    'England.and.Wales_MBA',
+    'England.and.Wales_LBA',
+    'England.and.Wales_IA',
+    'England.and.Wales_PostIA',
+    'England.and.Wales_Modern',
 ]
+cohorts_split = [
+    'England.and.Wales_N_1',
+    'England.and.Wales_N_2',
+    'England.and.Wales_C.EBA_1',    
+    'England.and.Wales_C.EBA_2',
+    'England.and.Wales_MBA_1',
+    'England.and.Wales_MBA_2',
+    'England.and.Wales_LBA_1',
+    'England.and.Wales_LBA_2',
+    'England.and.Wales_IA_1',
+    'England.and.Wales_IA_2',
+    'England.and.Wales_PostIA_1',
+    'England.and.Wales_PostIA_2',
+    'England.and.Wales_Modern',
+]
+cohorts_ref = [
+    'WHGA',
+    'Balkan_N',
+    'OldSteppe',
+]
+ref_inds = np.isin(ds.sample_group.values, cohorts_ref)
+kept_inds = (
+        (ds.sample_filter_0.values == 'Use')
+        & np.isin(ds.sample_filter_1.values, cohorts)
+    ) | ref_inds
+with dask.config.set(**{'array.slicing.split_large_chunks': True}):
+    ds = ds.isel(samples=kept_inds)
+
+# split time intervals in two based on median sample age
+filter_1_split = ds.sample_filter_1.values
+for cohort in cohorts[:-1]:
+    median_date = np.median(ds.sample_date_bp.values[ds.sample_filter_1.values == cohort])
+    filter_1_split[(ds.sample_filter_1.values == cohort) & (ds.sample_date_bp.values <= median_date)] = cohort + '_1'
+    filter_1_split[(ds.sample_filter_1.values == cohort) & (ds.sample_date_bp.values > median_date)] = cohort + '_2'
+ds['sample_filter_1_split'] = (['samples'], filter_1_split)
 
 ds['mask_cohorts'] = (
-    ['cohorts', 'samples'],
-    [[i in gs for i in ds.sample_group.values] for gs in time_periods_grouping.values()]
+    ['cohorts_split', 'samples'],
+    [(ds.sample_filter_1_split.values == p) for p in cohorts_split]
 )
 ds['mask_cohorts_ref'] = (
     ['cohorts_ref', 'samples'],
@@ -40,7 +67,7 @@ ds['mask_cohorts_ref'] = (
 )
 
 ds['variant_count_nonmiss'] = (
-    ['cohorts', 'variants'],
+    ['cohorts_split', 'variants'],
     np.stack([
         np.sum(~ds.call_genotype_mask.values[:, mask, 0], axis=1) 
         for mask in ds.mask_cohorts.values
@@ -54,8 +81,8 @@ ds['variant_count_nonmiss_ref'] = (
     ])
 )
 kept_loci = (
-    np.all((ds.variant_count_nonmiss.values > 2), axis=0) 
-    & np.all((ds.variant_count_nonmiss_ref.values > 2), axis=0)
+    np.all((ds.variant_count_nonmiss.values > 5), axis=0) # changed min non-miss
+    & np.all((ds.variant_count_nonmiss_ref.values > 5), axis=0)
 )
 with dask.config.set(**{'array.slicing.split_large_chunks': False}):
     ds = ds.sel(variants=kept_loci)
@@ -82,6 +109,7 @@ geno[geno == -1] = np.nan
 ref_af = np.stack([np.nanmean(geno[mask], axis=0) for mask in ds.mask_cohorts_ref.values])
 sample_size_ref = [np.sum(mask) for mask in ds.mask_cohorts_ref.values]
 
+
 def allele_freq(geno, mask):
     return np.nanmean(geno[mask], axis=0)
 
@@ -95,7 +123,7 @@ sample_size = np.array([
     for mask in ds.mask_cohorts.values
 ])
 
-Q = np.stack([
+Q  = np.stack([
     np.mean(ds.sample_admixture[mask], axis=0)
     for mask in ds.mask_cohorts.values
 ])
@@ -112,13 +140,13 @@ admix_cov = ac.get_admix_covariance_matrix(
     ref_sample_size=ds.variant_count_nonmiss_ref.values,
 )
 
-alpha_mask = np.array([ # Anatolia, WHG, Yamnaya
+alpha_mask = np.array([ # WHG, EEF, Steppe
+    [0, 0, 1],
     [0, 1, 0],
-    [0, 0, 0],
-    [0, 0, 0],
-    [0, 0, 1],
+    [0, 1, 0],
+    [0, 1, 0],
     [1, 0, 0],
-    [0, 0, 1],
+    [0, 1, 0],
 ], dtype=bool) # says which alpha is different from zero
 alphas = ac.q2a_simple(Q, alpha_mask)
 var_drift = ac.solve_for_variances(
@@ -146,7 +174,7 @@ for i in range(1, k + 1):
     totvar.append(np.sum(covmat[:i, :i]))
     G.append(
         ac.get_matrix_sum(
-            covmat[:i, :i] - admix_cov[:i, :i] - drift_err[:i, :i],
+            covmat[:i, :i] - admix_cov[:i, :i],
             include_diag=False, abs=False
         ) / totvar[-1]
     )
@@ -168,7 +196,8 @@ for i in range(1, k + 1):
             include_diag=True, abs=False
         ) / totvar[-1]
     )
-    
+
+
 N_boot = 1e4
 tile_idxs = ac.sg.create_tile_idxs(ds, type='variant', size=1_000)
 # tile_idxs = ac.sg.create_tile_idxs(ds, type='position', size=1_000_000)
@@ -343,7 +372,7 @@ axs[k, l].legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), title="$\\Delt
 
 k, l = (1, 1)
 ac.plot_ci_line(times[1:] + x_shift, np.stack(straps_G_nc).T, ax=axs[k, l], linestyle='dashed', marker='o', label='$G_{nc}$')
-ac.plot_ci_line(times[1:] + 2 * x_shift, np.stack(straps_G_nde).T, ax=axs[k, l], linestyle='dashdot', marker='^', label='$G_{de}$')
+ac.plot_ci_line(times[1:] + 2 * x_shift, np.stack(straps_G_nde).T, ax=axs[k, l], linestyle='dashdot', marker='^', label='$G_{nde}$')
 ac.plot_ci_line(times[1:], np.stack(straps_G).T, ax=axs[k, l], marker='o', label='G')
 ac.plot_ci_line(times[1:] - x_shift, np.stack(straps_Ap).T, ax=axs[k, l], color='blue', marker='s', label='A\'')
 axs[k, l].set_xlim(times[1] + x_shift + time_padding, times[-1] - x_shift - time_padding)
@@ -357,6 +386,7 @@ for ci, t in zip(straps_G, times[1:]):
         axs[k, l].annotate("*", xy=(t, 0.1))
 
 fig.savefig(snakemake.output['fig'])
+
 
 #==========
 # Do some reduced bootstrap to have a genome wide distribution

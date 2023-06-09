@@ -39,7 +39,9 @@ ds['cohorts_ref_id'] = (['cohorts_ref'], cohorts_ref)
 
 ds = ds.isel(ploidy = [True, False])
 
-ds = ds.isel(variants = (ds.variant_contig != 22) & (ds.variant_contig != 23)) # remove sex chr "23", "24"
+ds = ds.isel(variants=np.where(
+	(ds.variant_contig != 22) & (ds.variant_contig != 23)
+)[0]) # remove sex chr "23", "24"
 ds.attrs['contigs'] = ds.attrs['contigs'][:-2]
 
 # integrate metadata

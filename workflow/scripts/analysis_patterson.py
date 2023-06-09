@@ -144,7 +144,7 @@ print(drift_err, file=report)
 k = covmat.shape[0]
 G = []
 G_nc = []
-G_de = []
+G_nde = []
 Ap = []
 totvar = []
 for i in range(1, k + 1):
@@ -161,7 +161,7 @@ for i in range(1, k + 1):
             include_diag=False, abs=False
         ) / totvar[-1]
     )
-    G_de.append(
+    G_nde.append(
         ac.get_matrix_sum(
             covmat[:i, :i] - admix_cov[:i, :i] - drift_err[:i, :i],
             include_diag=False, abs=False
@@ -180,6 +180,12 @@ tile_idxs = ac.sg.create_tile_idxs(ds, type='variant', size=1_000)
 # tile_idxs = ac.sg.create_tile_idxs(ds, type='position', size=1_000_000)
 # tile_idxs = [t for t in tile_idxs if len(t) >= 100] # filter
 sizes = [x.size for x in tile_idxs] # Number of SNPs in tiles
+
+report.write("\n==========\nBootstrap info:\n")
+report.write("number of tiles:\n")
+print(len(tile_idxs), file=report)
+report.write("min, max, median sizes:\n")
+print(f"{np.min(sizes)}, {np.max(sizes)}, {np.median(sizes)}", file=report)
 
 n_sample = ds.variant_count_nonmiss.values
 n_sample_ref = ds.variant_count_nonmiss_ref.values
@@ -209,10 +215,10 @@ tiled_drift_err = np.stack([
     for c, a in zip(tiled_cov, tiled_admix_cov)
 ])
 
-tiled_corr_cov = np.stack([
+tiled_corr_cov_nde = np.stack([
     c - a for c, a in zip(tiled_cov, tiled_admix_cov)
 ])
-tiled_corr_cov_de = np.stack([
+tiled_corr_cov = np.stack([
     c - a - d for c, a, d in zip(tiled_cov, tiled_admix_cov, tiled_drift_err)
 ])
 
@@ -225,7 +231,7 @@ straps_cov = ac.bootstrap_stat(tiled_corr_cov, weights, N_boot)
 
 straps_G = []
 straps_G_nc = []
-straps_G_de = []
+straps_G_nde = []
 straps_Ap = []
 straps_totvar = []
 k = tiled_cov.shape[1]
@@ -244,7 +250,6 @@ for i in range(1, k + 1):
             tmp_totvar,
             weights,
             N_boot,
-            # statistic=G[i - 1],
         )
     )
     straps_G_nc.append(
@@ -253,16 +258,14 @@ for i in range(1, k + 1):
             tmp_totvar,
             weights,
             N_boot,
-            # statistic=G_nc[i - 1],
         )
     )
-    straps_G_de.append(
+    straps_G_nde.append(
         ac.bootstrap_ratio(
-            np.stack([ac.get_matrix_sum(c) for c in tiled_corr_cov_de[:, :i, :i]]),
+            np.stack([ac.get_matrix_sum(c) for c in tiled_corr_cov_nde[:, :i, :i]]),
             tmp_totvar,
             weights,
             N_boot,
-            # statistic=G[i - 1],
         )
     )
     straps_Ap.append(
@@ -271,7 +274,6 @@ for i in range(1, k + 1):
             tmp_totvar,
             weights,
             N_boot,
-            # statistic=Ap[i - 1],
         )
     )
 
@@ -280,8 +282,8 @@ report.write("G:\n")
 print(straps_G, file=report)
 report.write("G_nc:\n")
 print(straps_G_nc, file=report)
-report.write("G_de:\n")
-print(straps_G_de, file=report)
+report.write("G_nde:\n")
+print(straps_G_nde, file=report)
 report.write("Ap:\n")
 print(straps_Ap, file=report)
 
@@ -347,14 +349,14 @@ axs[k, l].legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), title="$\\Delt
 
 k, l = (1, 1)
 ac.plot_ci_line(times[1:] + x_shift, np.stack(straps_G_nc).T, ax=axs[k, l], linestyle='dashed', marker='o', label='$G_{nc}$')
-ac.plot_ci_line(times[1:] + 2 * x_shift, np.stack(straps_G_de).T, ax=axs[k, l], linestyle='dashdot', marker='^', label='$G_{de}$')
+ac.plot_ci_line(times[1:] + 2 * x_shift, np.stack(straps_G_nde).T, ax=axs[k, l], linestyle='dashdot', marker='^', label='$G_{nde}$')
 ac.plot_ci_line(times[1:], np.stack(straps_G).T, ax=axs[k, l], marker='o', label='G')
 ac.plot_ci_line(times[1:] - x_shift, np.stack(straps_Ap).T, ax=axs[k, l], color='blue', marker='s', label='A\'')
 axs[k, l].set_xlim(times[1] + x_shift + time_padding, times[-1] - x_shift - time_padding)
 axs[k, l].hlines(y=0, xmin=times[-1] - time_padding, xmax=times[1] + time_padding, colors='grey', linestyles='dotted')
 axs[k, l].set_xlabel('t')
-axs[k, l].set_ylabel("Proportion of variance ($p_t - p_{5424}$)")
-axs[k, l].legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=3)
+axs[k, l].set_ylabel("Proportion of variance ($p_t - p_{t0}$)")
+axs[k, l].legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=4)
 axs[k, l].set_title("D", loc='left', fontdict={'fontweight': 'bold'})
 for ci, t in zip(straps_G, times[1:]):
     if ci[0]*ci[2] > 0:
@@ -367,7 +369,25 @@ fig.savefig(snakemake.output['fig'])
 # Do some reduced bootstrap to have a genome wide distribution
 # to compare to
 
+rng = np.random.default_rng()
+tiled_corr_totvar = np.sum(tiled_corr_cov, axis=(1, 2))
 
+# do the bootstraps
+L = len(tiled_corr_totvar)
+subset_L = round(len(tile_idxs)/5)
+straps = []
+for _ in np.arange(N_boot):
+    bidx = rng.integers(0, L, size=subset_L)
+    straps.append(
+        ac.weighted_mean(
+            tiled_corr_totvar[bidx],
+            weights[bidx],
+            axis=0,
+        )
+    )
+straps = np.array(straps)
+That = np.mean(straps, axis=0)
+totvar_corr_CI_sub = ac.bootstrap_ci(That, straps, alpha=0.05, axis=0)
 
 
 #================
@@ -573,6 +593,10 @@ ac.plot_ci_line(
 
 #   corrected
 # totvar
+
+axs3[1, 1].hlines(y=totvar_corr_CI_sub[1], xmin=0, xmax=4, linestyles='dashdot')
+axs3[1, 1].fill_between(x=[0, 4], y1=[totvar_corr_CI_sub[0]]*2, y2=[totvar_corr_CI_sub[2]]*2, color='b', alpha=.15)
+
 ac.plot_ci_line(
     np.unique(bins),
     np.stack([x[8] for x in bin_res]).T,
