@@ -132,6 +132,12 @@ var_drift = ac.solve_for_variances(
 )
 drift_err = ac.get_drift_err_matrix(var_drift, alphas)
 
+report.write("\n==========\nEstimated Q and alphas:\n")
+report.write("Q:\n")
+print(Q, file=report)
+report.write("alphas:\n")
+print(alphas, file=report)
+
 report.write("\n==========\nCovariances and drift component:\n")
 report.write("covmat:\n")
 print(covmat, file=report)

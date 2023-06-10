@@ -53,8 +53,8 @@ with dask.config.set(**{'array.slicing.split_large_chunks': True}):
 filter_1_split = ds.sample_filter_1.values
 for cohort in cohorts[:-1]:
     median_date = np.median(ds.sample_date_bp.values[ds.sample_filter_1.values == cohort])
-    filter_1_split[(ds.sample_filter_1.values == cohort) & (ds.sample_date_bp.values <= median_date)] = cohort + '_1'
-    filter_1_split[(ds.sample_filter_1.values == cohort) & (ds.sample_date_bp.values > median_date)] = cohort + '_2'
+    filter_1_split[(ds.sample_filter_1.values == cohort) & (ds.sample_date_bp.values > median_date)] = cohort + '_1'
+    filter_1_split[(ds.sample_filter_1.values == cohort) & (ds.sample_date_bp.values <= median_date)] = cohort + '_2'
 ds['sample_filter_1_split'] = (['samples'], filter_1_split)
 
 ds['mask_cohorts'] = (
@@ -95,7 +95,7 @@ print(times, file=report)
 
 report.write("\n==========\nSample sizes:\n")
 print(f"Samples: {[x.sum() for x in ds.mask_cohorts.values]}", file=report)
-print(f"for {cohorts}", file=report)
+print(f"for {cohorts_split}", file=report)
 print(f"Refs: {[x.sum() for x in ds.mask_cohorts_ref.values]}", file=report)
 print(f"for {cohorts_ref}", file=report)
 
@@ -142,10 +142,16 @@ admix_cov = ac.get_admix_covariance_matrix(
 
 alpha_mask = np.array([ # WHG, EEF, Steppe
     [0, 0, 1],
+    [0, 0, 1],
+    [0, 1, 0],
+    [0, 1, 0],
+    [0, 1, 0],
     [0, 1, 0],
     [0, 1, 0],
     [0, 1, 0],
     [1, 0, 0],
+    [1, 0, 0],
+    [0, 1, 0],
     [0, 1, 0],
 ], dtype=bool) # says which alpha is different from zero
 alphas = ac.q2a_simple(Q, alpha_mask)
@@ -154,6 +160,12 @@ var_drift = ac.solve_for_variances(
     alphas,
 )
 drift_err = ac.get_drift_err_matrix(var_drift, alphas)
+
+report.write("\n==========\nEstimated Q and alphas:\n")
+report.write("Q:\n")
+print(Q, file=report)
+report.write("alphas:\n")
+print(alphas, file=report)
 
 report.write("\n==========\nCovariances and drift component:\n")
 report.write("covmat:\n")
@@ -317,12 +329,20 @@ time_padding = 100
 
 colors_oi = [
     '#000000', # black
+    '#000000', # black
+    '#D55E00', # vermillion
     '#D55E00', # vermillion
     '#0072B2', # blue
+    '#0072B2', # blue
+    '#009E73', # green
     '#009E73', # green
     '#E69F00', # orange
+    '#E69F00', # orange
+    '#56B4E9', # sky blue
     '#56B4E9', # sky blue
     '#CC79A7', # pink
+    '#CC79A7', # pink
+    '#F0E442', # yellow
     '#F0E442', # yellow
 ]
 
