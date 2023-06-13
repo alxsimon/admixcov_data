@@ -20,12 +20,12 @@ for i in [0, 1, 2]:
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 4))
 
-labels = [f"$\\Delta p_{{{int(t)}}}$" for t in uk_data['times'][:-1]]
+labels = [f"$\\Delta p_{i}$" for i, t in enumerate(uk_data['times'][:-1])]
 ac.plot_covmat_ci(uk_data['straps_cov_nc'], axs[0], delta_labels=labels)
 axs[0].set_title("A", loc='left', fontdict={'fontweight': 'bold'})
 axs[0].set_title('UK')
 
-labels = [f"$\\Delta p_{{{int(t)}}}$" for t in bo_data['times'][:-1]]
+labels = [f"$\\Delta p_{i}$" for i, t in enumerate(bo_data['times'][:-1])]
 ac.plot_covmat_ci(bo_data['straps_cov_nc'], axs[1], delta_labels=labels)
 axs[1].set_title("B", loc='left', fontdict={'fontweight': 'bold'})
 axs[1].set_title('Bohemia')
