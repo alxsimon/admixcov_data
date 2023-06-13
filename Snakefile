@@ -15,4 +15,4 @@ rule all:
 		rules.analysis_patterson.output,
 		rules.analysis_papac.output,
 		rules.figure_matrices.output,
-		# rules.analysis_patterson_2.output,
+		rules.analysis_patterson_2.output,
