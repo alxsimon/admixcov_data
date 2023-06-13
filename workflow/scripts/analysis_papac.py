@@ -313,7 +313,7 @@ for i, pop in enumerate(ds.cohorts_ref_id.values):
 for x1, x2, txt in zip(times[:-1], times[1:], delta_list):
     _ = axs[k, l].text(x2+(x1 - x2)/2, 0.9, txt, ha='center')
 for i, t in enumerate(times):
-    _ = axs[k, l].text(t, 0.8, str(i), ha='center')
+    _ = axs[k, l].text(t, 0.82, str(i), ha='center')
 for x1, x2 in zip(times[1::2], times[2::2]):
     _ = axs[k, l].axvspan(x1, x2, facecolor='grey', alpha=0.10)
 axs[k, l].set_xlim(times[0] + time_padding, times[-1] - time_padding)
