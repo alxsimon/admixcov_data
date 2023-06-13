@@ -146,10 +146,10 @@ alpha_mask = np.array([ # WHG, EEF, Steppe
     [0, 1, 0],
     [0, 1, 0],
     [0, 1, 0],
+    [0, 0, 1],
     [0, 1, 0],
     [0, 1, 0],
-    [0, 1, 0],
-    [1, 0, 0],
+    [0, 0, 1],
     [1, 0, 0],
     [0, 1, 0],
     [0, 1, 0],
@@ -398,7 +398,7 @@ ac.plot_ci_line(times[1:] - x_shift, np.stack(straps_Ap).T, ax=axs[k, l], color=
 axs[k, l].set_xlim(times[1] + x_shift + time_padding, times[-1] - x_shift - time_padding)
 axs[k, l].hlines(y=0, xmin=times[-1] - time_padding, xmax=times[1] + time_padding, colors='grey', linestyles='dotted')
 axs[k, l].set_xlabel('t')
-axs[k, l].set_ylabel("Proportion of variance ($p_t - p_{t0}$)")
+axs[k, l].set_ylabel("Proportion of variance ($p_t - p_{5424}$)")
 axs[k, l].legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=4)
 axs[k, l].set_title("D", loc='left', fontdict={'fontweight': 'bold'})
 for ci, t in zip(straps_G, times[1:]):

@@ -284,6 +284,9 @@ print(straps_Ap, file=report)
 
 # Plotting
 
+import matplotlib.ticker as plticker
+loc = plticker.MultipleLocator(base=1.0)
+
 time_padding = 100
 
 colors_oi = [
@@ -298,6 +301,7 @@ colors_oi = [
 ]
 
 times = np.array(times) # ensure it is an array
+delta_list = [f"$\\Delta p_{{{int(t)}}}$" for t in range(len(times) - 1)]
 
 fig, axs = plt.subplots(2, 2, figsize=(10, 8), layout='constrained')
 
@@ -306,6 +310,12 @@ fmts = ['-o', '-s', '-^']
 labels = ['WHG-like', 'EEF-like', 'Steppe-like']
 for i, pop in enumerate(ds.cohorts_ref_id.values):
     axs[k, l].plot(times, Q[:,i], fmts[i], label=labels[i], color=colors_oi[i])
+for x1, x2, txt in zip(times[:-1], times[1:], delta_list):
+    _ = axs[k, l].text(x2+(x1 - x2)/2, 0.9, txt, ha='center')
+for i, t in enumerate(times):
+    _ = axs[k, l].text(t, 0.8, str(i), ha='center')
+for x1, x2 in zip(times[1::2], times[2::2]):
+    _ = axs[k, l].axvspan(x1, x2, facecolor='grey', alpha=0.10)
 axs[k, l].set_xlim(times[0] + time_padding, times[-1] - time_padding)
 axs[k, l].set_ylim(top=1)
 axs[k, l].set_ylabel("Mean ancestry")
@@ -313,50 +323,65 @@ axs[k, l].set_xlabel("Time (years BP)")
 axs[k, l].legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=3)
 axs[k, l].set_title("B", loc='left', fontdict={'fontweight': 'bold'})
 
-# combined_ci = ac.combine_covmat_CIs(straps_cov, straps_cov_nc)
-# scale_max = np.max(np.abs([np.nanmin(combined_ci[1] - np.diag(np.diag(combined_ci[1]))), np.nanmax(combined_ci[1] - np.diag(np.diag(combined_ci[1])))]))
-# ac.plot_covmat_ci(combined_ci, axs[0, 1], scale_max)
-# axs[0,1].set_title('covariance matrix (raw lower, corrected upper)')
-
-x_shift = 50
+x_shift = 0.1
+new_times = np.array(range(len(times)))
 k, l = (0, 0)
-ac.cov_lineplot(times, straps_cov_nc, axs[k, l], colors=colors_oi, time_padding=time_padding, d=x_shift, marker='o')
-axs[k, l].set_xlim(times[1] + x_shift + time_padding, times[-2] - x_shift - time_padding)
+ac.cov_lineplot(new_times, straps_cov_nc, axs[k, l], colors=colors_oi, d=x_shift, labels=delta_list, marker='o')
+axs[k, l].set_xlim(new_times[1] - x_shift, new_times[-2] + 3 * x_shift)
+axs[k, l].hlines(y=0, xmin=0, xmax=new_times[-1] + 3 * x_shift, linestyles='dotted', colors='grey')
 axs[k, l].set_ylabel("Cov($\\Delta p_i$, $\\Delta p_t$)")
 axs[k, l].set_xlabel("t")
 axs[k, l].set_title('Before admix. correction')
 axs[k, l].set_title("A", loc='left', fontdict={'fontweight': 'bold'})
+axs[k, l].xaxis.set_major_locator(loc)
 
 k, l = (1, 0)
-ac.cov_lineplot(times, straps_cov, axs[k, l], colors=colors_oi, time_padding=time_padding, d=x_shift, marker='o', ylim=axs[0, 0].get_ylim())
-axs[k, l].set_xlim(times[1] + x_shift + time_padding, times[-2] - x_shift - time_padding)
+ac.cov_lineplot(new_times, straps_cov, axs[k, l], colors=colors_oi, d=x_shift, labels=delta_list, marker='o', ylim=axs[0, 0].get_ylim())
+axs[k, l].set_xlim(new_times[1] - x_shift, new_times[-2] + 3 * x_shift)
+axs[k, l].hlines(y=0, xmin=0, xmax=new_times[-1] + 3 * x_shift, linestyles='dotted', colors='grey')
 axs[k, l].set_ylabel("Cov($\\Delta p_i$, $\\Delta p_t$)")
 axs[k, l].set_xlabel('t')
 axs[k, l].set_title('After admix. correction')
 axs[k, l].set_title("C", loc='left', fontdict={'fontweight': 'bold'})
 axs[k, l].legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), title="$\\Delta p_i$", ncol=3)
-
-# ac.plot_ci_line(times[1:], np.stack(straps_totvar).T, ax=axs[k, l], color='black', marker='o')
-# axs[k, l].set_xlim(times[1] + time_padding, times[-1] - time_padding)
-# axs[k, l].set_ylim(0)
-# axs[k, l].set_ylabel('Total variance (t)')
+axs[k, l].xaxis.set_major_locator(loc)
 
 k, l = (1, 1)
-ac.plot_ci_line(times[1:] + x_shift, np.stack(straps_G_nc).T, ax=axs[k, l], linestyle='dashed', marker='o', label='$G_{nc}$')
-ac.plot_ci_line(times[1:] + 2 * x_shift, np.stack(straps_G_nde).T, ax=axs[k, l], linestyle='dashdot', marker='^', label='$G_{de}$')
-ac.plot_ci_line(times[1:], np.stack(straps_G).T, ax=axs[k, l], marker='o', label='G')
-ac.plot_ci_line(times[1:] - x_shift, np.stack(straps_Ap).T, ax=axs[k, l], color='blue', marker='s', label='A\'')
-axs[k, l].set_xlim(times[1] + x_shift + time_padding, times[-1] - x_shift - time_padding)
-axs[k, l].hlines(y=0, xmin=times[-1] - time_padding, xmax=times[1] + time_padding, colors='grey', linestyles='dotted')
+ac.plot_ci_line(new_times[1:] + x_shift, np.stack(straps_G_nc).T, ax=axs[k, l], linestyle='dashed', marker='o', label='$G_{nc}$')
+ac.plot_ci_line(new_times[1:], np.stack(straps_G).T, ax=axs[k, l], marker='o', label='G')
+ac.plot_ci_line(new_times[1:] - x_shift, np.stack(straps_Ap).T, ax=axs[k, l], color='blue', marker='s', label='A\'')
+axs[k, l].set_xlim(new_times[1] - 2*x_shift, new_times[-1] + 2*x_shift)
+axs[k, l].hlines(y=0, xmin=new_times[-1], xmax=new_times[1], colors='grey', linestyles='dotted')
+# axs[k, l].set_ylim(ymax=1.)
 axs[k, l].set_xlabel('t')
-axs[k, l].set_ylabel("Proportion of variance ($p_t - p_{t0}$)")
-axs[k, l].legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=4)
+axs[k, l].set_ylabel("Proportion of variance ($p_t - p_{0}$)")
+axs[k, l].legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=3)
 axs[k, l].set_title("D", loc='left', fontdict={'fontweight': 'bold'})
-for ci, t in zip(straps_G, times[1:]):
+axs[k, l].xaxis.set_major_locator(loc)
+for ci, t in zip(straps_G, new_times[1:]):
     if ci[0]*ci[2] > 0:
         axs[k, l].annotate("*", xy=(t, 0.1))
 
 fig.savefig(snakemake.output['fig'])
+
+
+fig, ax = plt.subplots(figsize=(8, 5), layout='constrained')
+ac.plot_ci_line(new_times[1:] + x_shift, np.stack(straps_G_nc).T, ax=ax, linestyle='dashed', marker='o', label='$G_{nc}$')
+ac.plot_ci_line(new_times[1:] + 2 * x_shift, np.stack(straps_G_nde).T, ax=ax, linestyle='dashdot', marker='^', label='$G_{nde}$')
+ac.plot_ci_line(new_times[1:], np.stack(straps_G).T, ax=ax, marker='o', label='G')
+ac.plot_ci_line(new_times[1:] - x_shift, np.stack(straps_Ap).T, ax=ax, color='blue', marker='s', label='A\'')
+ax.set_xlim(new_times[1] - 2*x_shift, new_times[-1] + 2*x_shift)
+ax.hlines(y=0, xmin=new_times[-1], xmax=new_times[1], colors='grey', linestyles='dotted')
+ax.set_ylim(ymax=1)
+ax.set_xlabel('t')
+ax.set_ylabel("Proportion of variance ($p_t - p_{0}$)")
+ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=3)
+ax.set_title("D", loc='left', fontdict={'fontweight': 'bold'})
+ax.xaxis.set_major_locator(loc)
+for ci, t in zip(straps_G, new_times[1:]):
+    if ci[0]*ci[2] > 0:
+        ax.annotate("*", xy=(t, 0.1))
+fig.savefig(snakemake.output['fig_complete_G'])
 
 #==========
 # Do some reduced bootstrap to have a genome wide distribution
