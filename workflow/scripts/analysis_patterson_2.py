@@ -149,7 +149,7 @@ alpha_mask = np.array([ # WHG, EEF, Steppe
     [0, 0, 1],
     [0, 1, 0],
     [0, 1, 0],
-    [0, 0, 1],
+    [0, 0, 0],
     [1, 0, 0],
     [0, 1, 0],
     [0, 1, 0],
@@ -352,7 +352,7 @@ colors_oi = [
 times = np.array(times) # ensure it is an array
 delta_list = [f"$\\Delta p_{{{int(t)}}}$" for t in range(len(times) - 1)]
 
-fig, axs = plt.subplots(2, 2, figsize=(10, 8), layout='constrained')
+fig, axs = plt.subplots(2, 2, figsize=(16, 8), layout='constrained')
 
 k, l = (0, 1)
 fmts = ['-o', '-s', '-^']
@@ -380,7 +380,7 @@ axs[k, l].set_xlim(new_times[1] - x_shift, new_times[-2] + 3 * x_shift)
 axs[k, l].hlines(y=0, xmin=0, xmax=new_times[-1] + 3 * x_shift, linestyles='dotted', colors='grey')
 axs[k, l].set_ylabel("Cov($\\Delta p_i$, $\\Delta p_t$)")
 axs[k, l].set_xlabel("t")
-axs[k, l].set_title('Before admix. correction')
+axs[k, l].set_title('Before admixture correction')
 axs[k, l].set_title("A", loc='left', fontdict={'fontweight': 'bold'})
 axs[k, l].xaxis.set_major_locator(loc)
 
@@ -390,22 +390,22 @@ axs[k, l].set_xlim(new_times[1] - x_shift, new_times[-2] + 3 * x_shift)
 axs[k, l].hlines(y=0, xmin=0, xmax=new_times[-1] + 3 * x_shift, linestyles='dotted', colors='grey')
 axs[k, l].set_ylabel("Cov($\\Delta p_i$, $\\Delta p_t$)")
 axs[k, l].set_xlabel('t')
-axs[k, l].set_title('After admix. correction')
+axs[k, l].set_title('After admixture correction')
 axs[k, l].set_title("C", loc='left', fontdict={'fontweight': 'bold'})
 axs[k, l].legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), title="$\\Delta p_i$", ncol=3)
 axs[k, l].xaxis.set_major_locator(loc)
 
 k, l = (1, 1)
-ac.plot_ci_line(times[1:] + x_shift, np.stack(straps_G_nc).T, ax=axs[k, l], linestyle='dashed', marker='o', label='$G_{nc}$')
-ac.plot_ci_line(times[1:] + 2 * x_shift, np.stack(straps_G_nde).T, ax=axs[k, l], linestyle='dashdot', marker='^', label='$G_{nde}$')
-ac.plot_ci_line(times[1:], np.stack(straps_G).T, ax=axs[k, l], marker='o', label='G')
-ac.plot_ci_line(times[1:] - x_shift, np.stack(straps_Ap).T, ax=axs[k, l], color='blue', marker='s', label='A\'')
+ac.plot_ci_line(new_times[1:] + x_shift, np.stack(straps_G_nc).T, ax=axs[k, l], linestyle='dashed', marker='o', label='$G_{nc}$')
+ac.plot_ci_line(new_times[1:] + 2 * x_shift, np.stack(straps_G_nde).T, ax=axs[k, l], linestyle='dashdot', marker='^', label='$G_{nde}$')
+ac.plot_ci_line(new_times[1:], np.stack(straps_G).T, ax=axs[k, l], marker='o', label='G')
+ac.plot_ci_line(new_times[1:] - x_shift, np.stack(straps_Ap).T, ax=axs[k, l], color='blue', marker='s', label='A\'')
 axs[k, l].set_xlim(new_times[1] - 2*x_shift, new_times[-1] + 2*x_shift)
 axs[k, l].hlines(y=0, xmin=new_times[-1], xmax=new_times[1], colors='grey', linestyles='dotted')
 axs[k, l].set_ylim(ymax=1)
 axs[k, l].set_xlabel('t')
 axs[k, l].set_ylabel("Proportion of variance ($p_t - p_{0}$)")
-axs[k, l].legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=3)
+axs[k, l].legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=4)
 axs[k, l].set_title("D", loc='left', fontdict={'fontweight': 'bold'})
 axs[k, l].xaxis.set_major_locator(loc)
 for ci, t in zip(straps_G, new_times[1:]):
