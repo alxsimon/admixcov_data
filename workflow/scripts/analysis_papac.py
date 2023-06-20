@@ -506,6 +506,10 @@ ac.plot_ci_line(
 )
 
 #   corrected
+
+axs3[1, 0].hlines(y=totvar_corr_CI_sub[1], xmin=0, xmax=4, linestyles='dashdot')
+axs3[1, 0].fill_between(x=[0, 4], y1=[totvar_corr_CI_sub[0]]*2, y2=[totvar_corr_CI_sub[2]]*2, color='b', alpha=.15)
+
 # totvar
 ac.plot_ci_line(
     np.unique(bins),
