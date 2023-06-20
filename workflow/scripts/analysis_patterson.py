@@ -6,6 +6,8 @@ import matplotlib.ticker as ticker
 import dask
 import pickle
 
+rng = np.random.default_rng(2348976)
+
 report = open(snakemake.output['report'], 'w')
 
 ds = sg.load_dataset(snakemake.input['zarr'])
@@ -232,8 +234,8 @@ n_loci = np.array([tile.size for tile in tile_idxs])
 weights = n_loci / np.sum(n_loci)
 
 # do the bootstraps
-straps_cov_nc = ac.bootstrap_stat(tiled_cov, weights, N_boot)
-straps_cov = ac.bootstrap_stat(tiled_corr_cov, weights, N_boot)
+straps_cov_nc = ac.bootstrap_stat(tiled_cov, weights, N_boot, rng=rng)
+straps_cov = ac.bootstrap_stat(tiled_corr_cov, weights, N_boot, rng=rng)
 
 straps_G = []
 straps_G_nc = []
@@ -248,6 +250,7 @@ for i in range(1, k + 1):
             tmp_totvar,
             weights,
             N_boot,
+            rng=rng,
         )
     )
     straps_G.append(
@@ -256,6 +259,7 @@ for i in range(1, k + 1):
             tmp_totvar,
             weights,
             N_boot,
+            rng=rng,
         )
     )
     straps_G_nc.append(
@@ -264,6 +268,7 @@ for i in range(1, k + 1):
             tmp_totvar,
             weights,
             N_boot,
+            rng=rng,
         )
     )
     straps_G_nde.append(
@@ -272,6 +277,7 @@ for i in range(1, k + 1):
             tmp_totvar,
             weights,
             N_boot,
+            rng=rng,
         )
     )
     straps_Ap.append(
@@ -280,6 +286,7 @@ for i in range(1, k + 1):
             tmp_totvar,
             weights,
             N_boot,
+            rng=rng,
         )
     )
 
@@ -400,7 +407,6 @@ fig.savefig(snakemake.output['fig_complete_G'])
 # Do some reduced bootstrap to have a genome wide distribution
 # to compare to
 
-rng = np.random.default_rng(2348976)
 tiled_corr_totvar = np.sum(tiled_corr_cov, axis=(1, 2))
 
 # do the bootstraps
@@ -447,6 +453,7 @@ for bin in np.unique(bins):
 			alpha_mask,
             tile_type='variant',
 			tile_size=1_000,
+            rng=rng,
 		)
 	)
 
@@ -566,6 +573,7 @@ for bin in np.unique(bins):
 			alpha_mask,
             tile_type='variant',
 			tile_size=1_000,
+            rng=rng,
 		)
 	)
 
