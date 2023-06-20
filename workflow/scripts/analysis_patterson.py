@@ -400,7 +400,7 @@ fig.savefig(snakemake.output['fig_complete_G'])
 # Do some reduced bootstrap to have a genome wide distribution
 # to compare to
 
-rng = np.random.default_rng()
+rng = np.random.default_rng(2348976)
 tiled_corr_totvar = np.sum(tiled_corr_cov, axis=(1, 2))
 
 # do the bootstraps
@@ -463,6 +463,7 @@ ac.plot_ci_line(np.unique(bins), np.stack(Ap_CI).T, axs1[0], marker='o', color='
 axs1[0].hlines(y=0, xmin=0, xmax=4, color='black', linestyles='dotted')
 axs1[0].set_xlabel('Recombination bin')
 axs1[0].set_ylabel('Proportion of variance')
+axs1[0].xaxis.set_major_locator(loc)
 
 covmats = [x[4] for x in bin_res]
 # variances devided by half hz
@@ -474,10 +475,11 @@ vardiag_bins_CIs = [
 	)
 	for i in range(6)]
 for i, ci in enumerate(vardiag_bins_CIs):
-	ac.plot_ci_line(np.unique(bins) + 0.1 * i, ci, axs2[0], marker='o', label=f'p_{int(times[i])}', color=colors_oi[i])
+	ac.plot_ci_line(np.unique(bins) + 0.1 * i, ci, axs2[0], marker='o', label=f'$\Delta p_{i}$', color=colors_oi[i])
 axs2[0].set_xlabel('Recombination bin')
 axs2[0].set_ylabel('$Var(\Delta p_t) / p_t(1 - p_t)$')
 axs2[0].hlines(y=0, xmin=0, xmax=4, color='black', linestyles='dotted')
+axs2[0].xaxis.set_major_locator(loc)
 
 #   uncorrected
 # totvar
@@ -489,7 +491,7 @@ ac.plot_ci_line(
     label='Total variance',
 )
 axs3[0, 0].set_xlabel('Recombination bin')
-axs3[0, 0].xaxis.set_major_locator(ticker.MultipleLocator(1))
+axs3[0, 0].xaxis.set_major_locator(loc)
 
 # sum var
 ac.plot_ci_line(
@@ -519,7 +521,7 @@ ac.plot_ci_line(
     label='Total variance',
 )
 axs3[1, 0].set_xlabel('Recombination bin')
-axs3[1, 0].xaxis.set_major_locator(ticker.MultipleLocator(1))
+axs3[1, 0].xaxis.set_major_locator(loc)
 
 # sum var
 ac.plot_ci_line(
@@ -576,6 +578,7 @@ ac.plot_ci_line(np.unique(bins), np.stack(Ap_CI).T, axs1[1], marker='o', color='
 axs1[1].hlines(y=0, xmin=0, xmax=4, color='black', linestyles='dotted')
 axs1[1].set_xlabel('B-value bin')
 axs1[1].set_ylabel('Proportion of variance')
+axs1[1].xaxis.set_major_locator(loc)
 
 covmats = [x[4] for x in bin_res]
 # variances devided by half hz
@@ -587,10 +590,11 @@ vardiag_bins_CIs = [
 	)
 	for i in range(len(times) - 1)]
 for i, ci in enumerate(vardiag_bins_CIs):
-	ac.plot_ci_line(np.unique(bins) + 0.1 * i, ci, axs2[1], marker='o', label=f'p_{int(times[i])}', color=colors_oi[i])
+	ac.plot_ci_line(np.unique(bins) + 0.1 * i, ci, axs2[1], marker='o', label=f'\Delta p_{i}', color=colors_oi[i])
 axs2[1].set_xlabel('B-value bin')
 axs2[1].set_ylabel('$Var(\Delta p_t) / p_t(1 - p_t)$')
 axs2[1].hlines(y=0, xmin=0, xmax=4, color='black', linestyles='dotted')
+axs2[1].xaxis.set_major_locator(loc)
 
 #   uncorrected
 # totvar
@@ -602,7 +606,7 @@ ac.plot_ci_line(
     label='Total variance',
 )
 axs3[0, 1].set_xlabel('B-value bin')
-axs3[0, 1].xaxis.set_major_locator(ticker.MultipleLocator(1))
+axs3[0, 1].xaxis.set_major_locator(loc)
 
 # sum var
 ac.plot_ci_line(
@@ -636,7 +640,7 @@ ac.plot_ci_line(
     label='Total variance',
 )
 axs3[1, 1].set_xlabel('B-value bin')
-axs3[1, 1].xaxis.set_major_locator(ticker.MultipleLocator(1))
+axs3[1, 1].xaxis.set_major_locator(loc)
 
 # sum var
 ac.plot_ci_line(
@@ -663,7 +667,7 @@ fig1.legend(handles, labels, loc='outside upper center', ncols=2)
 fig1.savefig(snakemake.output['fig_bins_G'])
 
 handles, labels = axs2[0].get_legend_handles_labels()
-fig2.legend(handles, labels, loc='outside right upper', title='$p_t$')
+fig2.legend(handles, labels, loc='outside right upper', title='$\Delta p_t$')
 fig2.savefig(snakemake.output['fig_bins_var'])
 
 handles, labels = axs3[0, 0].get_legend_handles_labels()
