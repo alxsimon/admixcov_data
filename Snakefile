@@ -7,8 +7,10 @@ include: "workflow/rules/data_prep_Papac2021.smk"
 include: "workflow/rules/smartpca.smk"
 include: "workflow/rules/analyses.smk"
 
-rule all:
+rule archive:
 	input:
+		rules.analysis_patterson.output,
+		rules.analysis_papac.output,
 		rules.smartpca_Patterson2022.output,
 		rules.smartpca_Patterson2022_proj.output,
 		rules.prepare_maps.output,
@@ -16,3 +18,11 @@ rule all:
 		rules.analysis_papac.output,
 		rules.figure_matrices.output,
 		rules.analysis_patterson_2.output,
+	output:
+		"results.tar.gz"
+	shell:
+		"tar -czf {output} results"
+
+rule all:
+	input:
+		rules.archive.output,
