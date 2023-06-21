@@ -426,6 +426,10 @@ straps = np.array(straps)
 That = np.mean(straps, axis=0)
 totvar_corr_CI_sub = ac.bootstrap_ci(That, straps, alpha=0.05, axis=0)
 
+report.write("\n==========\nReduced bootstrap:\n")
+report.write("total variance corrected:\n")
+print(totvar_corr_CI_sub, file=report)
+
 
 #================
 # Binning
@@ -434,11 +438,12 @@ nanmask = ~np.isnan(ds.variant_rate.values)
 ds_rate = ds.sel(variants=nanmask)
 
 q = np.quantile(ds_rate.variant_rate.values, list(np.arange(1/5, 1, 1/5)))
-report.write("\n==========\nRecombination quantiles:\n")
+report.write("\n==========\nRecombination bins:\n")
 min, max = (
     np.min(ds_rate.variant_rate.values),
     np.max(ds_rate.variant_rate.values)
 )
+report.write("Quantiles\n")
 print(f"min: {min}", file=report)
 print(f"max: {max}", file=report)
 print(q, file=report)
@@ -534,6 +539,9 @@ ac.plot_ci_line(
 axs3[1, 0].set_xlabel('Recombination bin')
 axs3[1, 0].xaxis.set_major_locator(loc)
 
+report.write("\ntotal variance corrected:\n")
+print(np.stack([x[8] for x in bin_res]), file=report)
+
 # sum var
 ac.plot_ci_line(
     np.unique(bins) + 0.1,
@@ -558,7 +566,8 @@ nanmask = ~np.isnan(ds.variant_bval.values)
 ds_bval = ds.sel(variants=nanmask)
 
 q = np.quantile(ds_bval.variant_bval.values, list(np.arange(1/5, 1, 1/5)))
-report.write("\n==========\nB-values quantiles:\n")
+report.write("\n==========\nB-values bins:\n")
+report.write("Quantiles:\n")
 min, max = (
     np.min(ds_rate.variant_bval.values),
     np.max(ds_rate.variant_bval.values)
@@ -653,6 +662,9 @@ ac.plot_ci_line(
 )
 axs3[1, 1].set_xlabel('B-value bin')
 axs3[1, 1].xaxis.set_major_locator(loc)
+
+report.write("\ntotal variance corrected:\n")
+print(np.stack([x[8] for x in bin_res]), file=report)
 
 # sum var
 ac.plot_ci_line(
