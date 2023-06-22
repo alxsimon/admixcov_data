@@ -13,5 +13,5 @@ dependencies:
   - bed-reader=0.2.36 # sgkit[plink]
   - pip
   - pip:
-    - git+https://github.com/alxsimon/py-admixcov.git@df03fcd
+    - git+https://github.com/alxsimon/py-admixcov.git@fb0e7da
     - git+https://github.com/pystatgen/sgkit@a140316 # fix needed
