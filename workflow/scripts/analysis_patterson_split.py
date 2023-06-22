@@ -379,10 +379,11 @@ axs[k, l].set_xlabel("Time (years BP)")
 axs[k, l].legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=3)
 axs[k, l].set_title("B", loc='left', fontdict={'fontweight': 'bold'})
 
+markers = ['o', '^'] * 6
 x_shift = 0.1
 new_times = np.array(range(len(times)))
 k, l = (0, 0)
-ac.cov_lineplot(new_times, straps_cov_nc, axs[k, l], colors=colors_oi, d=x_shift, labels=delta_list, marker='o')
+ac.cov_lineplot(new_times, straps_cov_nc, axs[k, l], colors=colors_oi, d=x_shift, labels=delta_list, markers=markers)
 axs[k, l].set_xlim(new_times[1] - x_shift, new_times[-2] + 3 * x_shift)
 axs[k, l].hlines(y=0, xmin=0, xmax=new_times[-1] + 3 * x_shift, linestyles='dotted', colors='grey')
 axs[k, l].set_ylabel("Cov($\\Delta p_i$, $\\Delta p_t$)")
@@ -392,7 +393,7 @@ axs[k, l].set_title("A", loc='left', fontdict={'fontweight': 'bold'})
 axs[k, l].xaxis.set_major_locator(loc)
 
 k, l = (1, 0)
-ac.cov_lineplot(new_times, straps_cov, axs[k, l], colors=colors_oi, d=x_shift, labels=delta_list, marker='o', ylim=axs[0, 0].get_ylim())
+ac.cov_lineplot(new_times, straps_cov, axs[k, l], colors=colors_oi, d=x_shift, labels=delta_list, markers=markers, ylim=axs[0, 0].get_ylim())
 axs[k, l].set_xlim(new_times[1] - x_shift, new_times[-2] + 3 * x_shift)
 axs[k, l].hlines(y=0, xmin=0, xmax=new_times[-1] + 3 * x_shift, linestyles='dotted', colors='grey')
 axs[k, l].set_ylabel("Cov($\\Delta p_i$, $\\Delta p_t$)")

@@ -42,7 +42,7 @@ rule figure_matrices:
 		'../scripts/figure_matrices.py'
 
 # split time intervals
-rule analysis_patterson_2:
+rule analysis_patterson_split:
 	input:
 		zarr = 'data/Patterson2022/Patterson2022.zarr',
 	output:
@@ -55,4 +55,4 @@ rule analysis_patterson_2:
 	conda:
 		"../envs/py-env.yaml"
 	script:
-		'../scripts/analysis_patterson_2.py'
+		'../scripts/analysis_patterson_split.py'
