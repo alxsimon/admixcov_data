@@ -159,7 +159,7 @@ for i in range(1, k + 1):
     totvar.append(np.sum(covmat[:i, :i]))
     G.append(
         ac.get_matrix_sum(
-            covmat[:i, :i] - admix_cov[:i, :i],
+            covmat[:i, :i] - admix_cov[:i, :i] - drift_err[:i, :i],
             include_diag=False, abs=False
         ) / totvar[-1]
     )
@@ -171,7 +171,7 @@ for i in range(1, k + 1):
     )
     G_nde.append(
         ac.get_matrix_sum(
-            covmat[:i, :i] - admix_cov[:i, :i] - drift_err[:i, :i],
+            covmat[:i, :i] - admix_cov[:i, :i],
             include_diag=False, abs=False
         ) / totvar[-1]
     )
@@ -367,8 +367,8 @@ axs[k, l].xaxis.set_major_locator(loc)
 
 k, l = (1, 1)
 ac.plot_ci_line(new_times[1:] + x_shift, np.stack(straps_G_nc).T, ax=axs[k, l], linestyle='dashed', marker='o', label='$G_{nc}$')
-ac.plot_ci_line(new_times[1:], np.stack(straps_G).T, ax=axs[k, l], marker='o', label='G')
-ac.plot_ci_line(new_times[1:] - x_shift, np.stack(straps_Ap).T, ax=axs[k, l], color='blue', marker='s', label='A')
+ac.plot_ci_line(new_times[1:], np.stack(straps_G).T, ax=axs[k, l], marker='o', label='$G$')
+ac.plot_ci_line(new_times[1:] - x_shift, np.stack(straps_Ap).T, ax=axs[k, l], color='blue', marker='s', label='$A$')
 axs[k, l].set_xlim(new_times[1] - 2*x_shift, new_times[-1] + 2*x_shift)
 axs[k, l].hlines(y=0, xmin=new_times[-1], xmax=new_times[1], colors='grey', linestyles='dotted')
 axs[k, l].set_ylim(ymax=1)
@@ -387,8 +387,8 @@ fig.savefig(snakemake.output['fig'])
 fig, ax = plt.subplots(figsize=(8, 5), layout='constrained')
 ac.plot_ci_line(new_times[1:] + x_shift, np.stack(straps_G_nc).T, ax=ax, linestyle='dashed', marker='o', label='$G_{nc}$')
 ac.plot_ci_line(new_times[1:] + 2 * x_shift, np.stack(straps_G_nde).T, ax=ax, linestyle='dashdot', marker='^', label='$G_{nde}$')
-ac.plot_ci_line(new_times[1:], np.stack(straps_G).T, ax=ax, marker='o', label='G')
-ac.plot_ci_line(new_times[1:] - x_shift, np.stack(straps_Ap).T, ax=ax, color='blue', marker='s', label='A')
+ac.plot_ci_line(new_times[1:], np.stack(straps_G).T, ax=ax, marker='o', label='$G$')
+ac.plot_ci_line(new_times[1:] - x_shift, np.stack(straps_Ap).T, ax=ax, color='blue', marker='s', label='$A$')
 ax.set_xlim(new_times[1] - 2*x_shift, new_times[-1] + 2*x_shift)
 ax.hlines(y=0, xmin=new_times[-1], xmax=new_times[1], colors='grey', linestyles='dotted')
 ax.set_ylim(ymax=1)
@@ -402,6 +402,25 @@ for ci, t in zip(straps_G, new_times[1:]):
         ax.annotate("*", xy=(t, 0.1))
 fig.savefig(snakemake.output['fig_complete_G'])
 
+
+#==========
+# pop size estimation
+
+corr_cov = covmat - admix_cov - drift_err
+
+gen_time = 30
+totvar_drift_hz = np.sum(np.diag(corr_cov)) / np.mean(af[0]*(1 - af[0]))
+
+var_drift_hz = np.diag(corr_cov) / np.mean(af * (1 - af), axis=1)[:-1]
+
+two_N_tot = 1 / (1 - (1 - totvar_drift_hz)**(1/((times[0] - times[-1])/gen_time)))
+two_Ns = 1 / (1 - (1 - var_drift_hz)**(1/((times[:-1] - times[1:]/gen_time))))
+
+report.write("\n==========\nPopsize estimates:\n")
+report.write("From total corrected variance:\n")
+print(two_N_tot, file=report)
+report.write("For each time interval:\n")
+print(two_Ns, file=report)
 
 #==========
 # Do some reduced bootstrap to have a genome wide distribution
@@ -470,8 +489,8 @@ fig1, axs1 = plt.subplots(1, 2, figsize=(10, 5), layout='constrained') # G
 fig2, axs2 = plt.subplots(1, 2, figsize=(10, 5), layout='constrained') # individual Var
 fig3, axs3 = plt.subplots(2, 2, figsize=(10, 10), layout='constrained') # totvar
 
-ac.plot_ci_line(np.unique(bins), np.stack(G_CI).T, axs1[0], marker='o', label='G')
-ac.plot_ci_line(np.unique(bins), np.stack(Ap_CI).T, axs1[0], marker='o', color='b', label='A')
+ac.plot_ci_line(np.unique(bins), np.stack(G_CI).T, axs1[0], marker='o', label='$G$')
+ac.plot_ci_line(np.unique(bins), np.stack(Ap_CI).T, axs1[0], marker='o', color='b', label='$A$')
 axs1[0].hlines(y=0, xmin=0, xmax=4, color='black', linestyles='dotted')
 axs1[0].set_xlabel('Recombination bin')
 axs1[0].set_ylabel('Proportion of variance')
@@ -594,8 +613,8 @@ for bin in np.unique(bins):
 G_CI = [x[5] for x in bin_res]
 Ap_CI = [x[6] for x in bin_res]
 
-ac.plot_ci_line(np.unique(bins), np.stack(G_CI).T, axs1[1], marker='o', label='G')
-ac.plot_ci_line(np.unique(bins), np.stack(Ap_CI).T, axs1[1], marker='o', color='b', label='A')
+ac.plot_ci_line(np.unique(bins), np.stack(G_CI).T, axs1[1], marker='o', label='$G$')
+ac.plot_ci_line(np.unique(bins), np.stack(Ap_CI).T, axs1[1], marker='o', color='b', label='$A$')
 axs1[1].hlines(y=0, xmin=0, xmax=4, color='black', linestyles='dotted')
 axs1[1].set_xlabel('B-value bin')
 axs1[1].set_ylabel('Proportion of variance')

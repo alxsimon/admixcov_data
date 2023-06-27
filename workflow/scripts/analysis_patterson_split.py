@@ -188,7 +188,7 @@ for i in range(1, k + 1):
     totvar.append(np.sum(covmat[:i, :i]))
     G.append(
         ac.get_matrix_sum(
-            covmat[:i, :i] - admix_cov[:i, :i],
+            covmat[:i, :i] - admix_cov[:i, :i] - drift_err[:i, :i],
             include_diag=False, abs=False
         ) / totvar[-1]
     )
@@ -200,7 +200,7 @@ for i in range(1, k + 1):
     )
     G_nde.append(
         ac.get_matrix_sum(
-            covmat[:i, :i] - admix_cov[:i, :i] - drift_err[:i, :i],
+            covmat[:i, :i] - admix_cov[:i, :i],
             include_diag=False, abs=False
         ) / totvar[-1]
     )
@@ -406,8 +406,8 @@ axs[k, l].xaxis.set_major_locator(loc)
 k, l = (1, 1)
 ac.plot_ci_line(new_times[1:] + x_shift, np.stack(straps_G_nc).T, ax=axs[k, l], linestyle='dashed', marker='o', label='$G_{nc}$')
 ac.plot_ci_line(new_times[1:] + 2 * x_shift, np.stack(straps_G_nde).T, ax=axs[k, l], linestyle='dashdot', marker='^', label='$G_{nde}$')
-ac.plot_ci_line(new_times[1:], np.stack(straps_G).T, ax=axs[k, l], marker='o', label='G')
-ac.plot_ci_line(new_times[1:] - x_shift, np.stack(straps_Ap).T, ax=axs[k, l], color='blue', marker='s', label='A')
+ac.plot_ci_line(new_times[1:], np.stack(straps_G).T, ax=axs[k, l], marker='o', label='$G$')
+ac.plot_ci_line(new_times[1:] - x_shift, np.stack(straps_Ap).T, ax=axs[k, l], color='blue', marker='s', label='$A$')
 axs[k, l].set_xlim(new_times[1] - 2*x_shift, new_times[-1] + 2*x_shift)
 axs[k, l].hlines(y=0, xmin=new_times[-1], xmax=new_times[1], colors='grey', linestyles='dotted')
 axs[k, l].set_ylim(ymax=1)
@@ -490,8 +490,8 @@ fig1, axs1 = plt.subplots(1, 2, figsize=(10, 5), layout='constrained') # G
 fig2, axs2 = plt.subplots(1, 2, figsize=(10, 5), layout='constrained') # individual Var
 fig3, axs3 = plt.subplots(2, 2, figsize=(10, 10), layout='constrained') # totvar
 
-ac.plot_ci_line(np.unique(bins), np.stack(G_CI).T, axs1[0], marker='o', label='G')
-ac.plot_ci_line(np.unique(bins), np.stack(Ap_CI).T, axs1[0], marker='o', color='b', label='A')
+ac.plot_ci_line(np.unique(bins), np.stack(G_CI).T, axs1[0], marker='o', label='$G$')
+ac.plot_ci_line(np.unique(bins), np.stack(Ap_CI).T, axs1[0], marker='o', color='b', label='$A$')
 axs1[0].hlines(y=0, xmin=0, xmax=4, color='black', linestyles='dotted')
 axs1[0].set_xlabel('Recombination bin')
 axs1[0].set_ylabel('Proportion of variance')
@@ -614,8 +614,8 @@ for bin in np.unique(bins):
 G_CI = [x[5] for x in bin_res]
 Ap_CI = [x[6] for x in bin_res]
 
-ac.plot_ci_line(np.unique(bins), np.stack(G_CI).T, axs1[1], marker='o', label='G')
-ac.plot_ci_line(np.unique(bins), np.stack(Ap_CI).T, axs1[1], marker='o', color='b', label='A')
+ac.plot_ci_line(np.unique(bins), np.stack(G_CI).T, axs1[1], marker='o', label='$G$')
+ac.plot_ci_line(np.unique(bins), np.stack(Ap_CI).T, axs1[1], marker='o', color='b', label='$A$')
 axs1[1].hlines(y=0, xmin=0, xmax=4, color='black', linestyles='dotted')
 axs1[1].set_xlabel('B-value bin')
 axs1[1].set_ylabel('Proportion of variance')
