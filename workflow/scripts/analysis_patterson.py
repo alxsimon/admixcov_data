@@ -337,7 +337,7 @@ for x1, x2 in zip(times[1::2], times[2::2]):
     _ = axs[k, l].axvspan(x1, x2, facecolor='grey', alpha=0.10)
 axs[k, l].set_xlim(times[0] + time_padding, times[-1] - time_padding)
 axs[k, l].set_ylim(top=1)
-axs[k, l].set_ylabel("Mean ancestry")
+axs[k, l].set_ylabel("Mean ancestry proportion")
 axs[k, l].set_xlabel("Time (years BP)")
 axs[k, l].legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=3)
 axs[k, l].set_title("B", loc='left', fontdict={'fontweight': 'bold'})
