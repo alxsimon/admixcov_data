@@ -390,6 +390,26 @@ for ci, t in zip(straps_G, new_times[1:]):
         ax.annotate("*", xy=(t, 0.1))
 fig.savefig(snakemake.output['fig_complete_G'])
 
+
+#==========
+# pop size estimation
+
+corr_cov = covmat - admix_cov - drift_err
+
+gen_time = 30
+totvar_drift_hz = np.sum(np.diag(corr_cov)) / np.mean(af[0]*(1 - af[0]))
+
+var_drift_hz = np.diag(corr_cov) / np.mean(af * (1 - af), axis=1)[:-1]
+
+two_N_tot = 1 / (1 - (1 - totvar_drift_hz)**(1/((times[0] - times[-1])/gen_time)))
+two_Ns = 1 / (1 - (1 - var_drift_hz)**(1/((times[:-1] - times[1:]/gen_time))))
+
+report.write("\n==========\nPopsize estimates from variances:\n")
+report.write("From total corrected variance, 2N:\n")
+print(two_N_tot, file=report)
+report.write("For each time interval, 2N:\n")
+print(two_Ns, file=report)
+
 #==========
 # Do some reduced bootstrap to have a genome wide distribution
 # to compare to

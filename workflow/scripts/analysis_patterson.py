@@ -416,10 +416,10 @@ var_drift_hz = np.diag(corr_cov) / np.mean(af * (1 - af), axis=1)[:-1]
 two_N_tot = 1 / (1 - (1 - totvar_drift_hz)**(1/((times[0] - times[-1])/gen_time)))
 two_Ns = 1 / (1 - (1 - var_drift_hz)**(1/((times[:-1] - times[1:]/gen_time))))
 
-report.write("\n==========\nPopsize estimates:\n")
-report.write("From total corrected variance:\n")
+report.write("\n==========\nPopsize estimates from variances:\n")
+report.write("From total corrected variance, 2N:\n")
 print(two_N_tot, file=report)
-report.write("For each time interval:\n")
+report.write("For each time interval, 2N:\n")
 print(two_Ns, file=report)
 
 #==========
