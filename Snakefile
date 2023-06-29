@@ -26,7 +26,7 @@ rule extract_AADR:
 	input:
 		"data/v50.0_1240K_public.tar"
 	output:
-		multiext("data/v50.0_1240k_public", '.geno', '.snp', '.ind')
+		multiext("data/v50.0_1240k_public", '.geno', '.snp', '.ind', '.anno')
 	shell:
 		"""
 		cd data
@@ -42,9 +42,9 @@ rule prepare_maps:
 	output:
 		bmap_out = 'data/Murphy2021_Bvalues_compiled.bmap.txt',
 		rmap_out = 'data/Bherer2017_Refined_EUR_genetic_map_sexavg.rmap.txt',
-	conda: "../envs/py-env.yaml"
+	conda: "workflow/envs/py-env.yaml"
 	script:
-		"../scripts/prepare_maps.py"
+		"workflow/scripts/prepare_maps.py"
 
 
 rule archive:
