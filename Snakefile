@@ -10,6 +10,8 @@ include: "workflow/rules/analyses.smk"
 rule all:
 	input:
 		"results.tar.gz",
+		rules.analysis_papac.output,
+		rules.main_figures.output,
 
 
 rule download_AADR:
@@ -56,7 +58,7 @@ rule archive:
 		rules.prepare_maps.output,
 		rules.analysis_patterson.output,
 		rules.analysis_papac.output,
-		rules.figure_matrices.output,
+		rules.main_figures.output,
 		rules.analysis_patterson_split.output,
 	output:
 		"results.tar.gz"

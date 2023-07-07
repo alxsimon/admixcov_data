@@ -3,7 +3,7 @@ rule analysis_patterson:
 		zarr = 'data/Patterson2022/Patterson2022.zarr',
 	output:
 		report = 'results/Patterson2022/analyses_info_Patterson2022.txt',
-		fig = 'results/Patterson2022/fig_Patterson2022_main.pdf',
+		fig_data = 'results/Patterson2022/fig_data_Patterson2022_main.pickle',
 		fig_complete_G = 'results/Patterson2022/fig_Patterson2022_complete_G.pdf',
 		fig_bins_G = 'results/Patterson2022/fig_Patterson2022_bins_G.pdf',
 		fig_bins_var = 'results/Patterson2022/fig_Patterson2022_bins_var.pdf',
@@ -19,7 +19,7 @@ rule analysis_papac:
 		zarr = 'data/Papac2021/Papac2021.zarr',
 	output:
 		report = 'results/Papac2021/analyses_info_Papac2021.txt',
-		fig = 'results/Papac2021/fig_Papac2021_main.pdf',
+		fig_data = 'results/Papac2021/fig_data_Papac2021_main.pickle',
 		fig_complete_G = 'results/Papac2021/fig_Papac2021_complete_G.pdf',
 		fig_bins_G = 'results/Papac2021/fig_Papac2021_bins_G.pdf',
 		fig_bins_var = 'results/Papac2021/fig_Papac2021_bins_var.pdf',
@@ -30,16 +30,19 @@ rule analysis_papac:
 	script:
 		'../scripts/analysis_papac.py'
 
-rule figure_matrices:
+rule main_figures:
 	input:
-		uk = 'results/Patterson2022/matrix_Patterson2022.pickle',
-		bo = 'results/Papac2021/matrix_Papac2021.pickle',
+		matrix_uk = 'results/Patterson2022/matrix_Patterson2022.pickle',
+		matrix_bo = 'results/Papac2021/matrix_Papac2021.pickle',
+		file_data_uk = 'results/Patterson2022/fig_data_Patterson2022_main.pickle',
+		file_data_bo = 'results/Papac2021/fig_data_Papac2021_main.pickle',
 	output:
-		fig = 'results/fig_matrices.pdf',
+		fig_data_matrix_ancestry = 'results/fig_data_matrix_ancestry.pdf',
+		fig_data_covlines = 'results/fig_data_covlines.pdf',
 	conda:
 		"../envs/py-env.yaml"
 	script:
-		'../scripts/figure_matrices.py'
+		'../scripts/main_figures.py'
 
 # split time intervals
 rule analysis_patterson_split:
