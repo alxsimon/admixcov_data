@@ -9,6 +9,7 @@ rule analysis_patterson:
 		fig_bins_var = 'results/Patterson2022/fig_Patterson2022_bins_var.pdf',
 		fig_bins_totvar = 'results/Patterson2022/fig_Patterson2022_bins_totvar.pdf',
 		matrix_data = 'results/Patterson2022/matrix_Patterson2022.pickle',
+		fig_data_bval_bins = 'results/Patterson2022/fig_data_Patterson_bval_bins.pickle',
 	conda:
 		"../envs/py-env.yaml"
 	script:
@@ -36,9 +37,11 @@ rule main_figures:
 		matrix_bo = 'results/Papac2021/matrix_Papac2021.pickle',
 		file_data_uk = 'results/Patterson2022/fig_data_Patterson2022_main.pickle',
 		file_data_bo = 'results/Papac2021/fig_data_Papac2021_main.pickle',
+		file_data_uk_bval_bins = 'results/Patterson2022/fig_data_Patterson_bval_bins.pickle',
 	output:
 		fig_data_matrix_ancestry = 'results/fig_data_matrix_ancestry.pdf',
 		fig_data_covlines = 'results/fig_data_covlines.pdf',
+		fig_data_uk_bval = 'results/fig_data_uk_bval.pdf',
 	conda:
 		"../envs/py-env.yaml"
 	script:
