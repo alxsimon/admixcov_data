@@ -290,11 +290,67 @@ for ci, t in zip(data_bo['straps_G'], new_times[1:]):
     if ci[0]*ci[2] > 0:
         axs[k, l].annotate("*", xy=(t, 0.2))
 
-
-# handles, labels = axs[3, 0].get_legend_handles_labels()
-# fig.legend(
-#     handles, labels,
-#     loc='lower center', bbox_to_anchor=(0.5, 0.27), ncol=3
-# )
-
 fig.savefig(snakemake.output['fig_data_covlines'])
+
+
+#=============================================
+# Third figure
+
+fig, axs = plt.subplots(
+    1, 2, figsize=(9, 5), layout='constrained',
+)
+
+with open(snakemake.input['file_data_uk_bval_bins'], 'rb') as fr:
+    bins_uk = pickle.load(fr)
+
+# Panel 1
+axs[0].hlines(y=bins_uk['totvar_corr_CI_sub'][1], xmin=0, xmax=4, linestyles='dashdot')
+axs[0].fill_between(x=[0, 4], y1=[bins_uk['totvar_corr_CI_sub'][0]]*2, y2=[bins_uk['totvar_corr_CI_sub'][2]]*2, color='b', alpha=.15)
+
+# totvar
+ac.plot_ci_line(
+    np.unique(bins_uk['bins']),
+    np.stack([x[8] for x in bins_uk['bin_res_b']]).T,
+    axs[0], marker='o',
+    color=colors_oi[0],
+    label='total variance',
+)
+axs[0].set_xlabel('B-value bin')
+axs[0].set_title('Total Variance (corrected)')
+axs[0].set_title("A", loc='left', fontdict={'fontweight': 'bold'})
+axs[0].hlines(y=0, xmin=0, xmax=4, color='black', linestyles='dotted')
+axs[0].xaxis.set_major_locator(loc)
+axs[0].yaxis.set_major_formatter(formatter)
+
+# sum cov
+ac.plot_ci_line(
+    np.unique(bins_uk['bins']) + 0.1,
+    np.stack([x[12] for x in bins_uk['bin_res_b']]).T,
+    axs[0], marker='^',
+    color=colors_oi[2],
+    label='sum of covariances',
+)
+axs[0].legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2)
+
+# panel 2
+covmats = [x[4] for x in bins_uk['bin_res_b']]
+# variances devided by half hz
+vardiag_bins_CIs = [
+	(
+		np.array([C[0][i,i] / bins_uk['bin_res_b'][j][13][i] for j, C in enumerate(covmats)]),
+		np.array([C[1][i,i] / bins_uk['bin_res_b'][j][13][i] for j, C in enumerate(covmats)]),
+		np.array([C[2][i,i] / bins_uk['bin_res_b'][j][13][i] for j, C in enumerate(covmats)]),
+	)
+	for i in range(len(data_uk['times']) - 1)]
+for i, ci in enumerate(vardiag_bins_CIs):
+	ac.plot_ci_line(np.unique(bins_uk['bins']) + 0.1 * i, ci, axs[1], marker='o', label=f'$\Delta p_{i}$', color=colors_oi[i])
+axs[1].set_xlabel('B-value bin')
+axs[1].set_ylabel('$Var(\Delta p_t) / p_t(1 - p_t)$')
+axs[1].hlines(y=0, xmin=0, xmax=4, color='black', linestyles='dotted')
+axs[1].set_title("Time interval variances (corrected)")
+axs[1].set_title("B", loc='left', fontdict={'fontweight': 'bold'})
+axs[1].xaxis.set_major_locator(loc)
+axs[1].yaxis.set_major_formatter(formatter)
+axs[1].legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=3, title='$\Delta p_t$')
+
+fig.savefig(snakemake.output['fig_data_uk_bval'])

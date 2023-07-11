@@ -439,15 +439,15 @@ covmats = [x[4] for x in bin_res]
 # variances devided by half hz
 vardiag_bins_CIs = [
 	(
-		np.array([C[0][i,i] / bin_res[j][13][i] for j, C in enumerate(covmats)]),
-		np.array([C[1][i,i] / bin_res[j][13][i] for j, C in enumerate(covmats)]),
-		np.array([C[2][i,i] / bin_res[j][13][i] for j, C in enumerate(covmats)]),
+		np.array([C[0][i,i] for j, C in enumerate(covmats)]),
+		np.array([C[1][i,i] for j, C in enumerate(covmats)]),
+		np.array([C[2][i,i] for j, C in enumerate(covmats)]),
 	)
 	for i in range(6)]
 for i, ci in enumerate(vardiag_bins_CIs):
 	ac.plot_ci_line(np.unique(bins) + 0.1 * i, ci, axs2[0], marker='o', label=f'$\Delta p_{i}$', color=colors_oi[i])
 axs2[0].set_xlabel('Recombination bin')
-axs2[0].set_ylabel('$Var(\Delta p_t) / p_t(1 - p_t)$')
+axs2[0].set_ylabel('$Var(\Delta p_t)$')
 axs2[0].hlines(y=0, xmin=0, xmax=4, color='black', linestyles='dotted')
 axs2[0].xaxis.set_major_locator(loc)
 
@@ -563,15 +563,15 @@ covmats = [x[4] for x in bin_res]
 # variances devided by half hz
 vardiag_bins_CIs = [
 	(
-		np.array([C[0][i,i] / bin_res[j][13][i] for j, C in enumerate(covmats)]),
-		np.array([C[1][i,i] / bin_res[j][13][i] for j, C in enumerate(covmats)]),
-		np.array([C[2][i,i] / bin_res[j][13][i] for j, C in enumerate(covmats)]),
+		np.array([C[0][i,i] for j, C in enumerate(covmats)]),
+		np.array([C[1][i,i] for j, C in enumerate(covmats)]),
+		np.array([C[2][i,i] for j, C in enumerate(covmats)]),
 	)
 	for i in range(len(times) - 1)]
 for i, ci in enumerate(vardiag_bins_CIs):
 	ac.plot_ci_line(np.unique(bins) + 0.1 * i, ci, axs2[1], marker='o', label=f'\Delta p_{i}', color=colors_oi[i])
 axs2[1].set_xlabel('B-value bin')
-axs2[1].set_ylabel('$Var(\Delta p_t) / p_t(1 - p_t)$')
+axs2[1].set_ylabel('$Var(\Delta p_t)$')
 axs2[1].hlines(y=0, xmin=0, xmax=4, color='black', linestyles='dotted')
 axs2[1].xaxis.set_major_locator(loc)
 
