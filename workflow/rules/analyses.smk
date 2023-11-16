@@ -10,6 +10,7 @@ rule analysis_patterson:
 		fig_bins_totvar = 'results/Patterson2022/fig_Patterson2022_bins_totvar.pdf',
 		matrix_data = 'results/Patterson2022/matrix_Patterson2022.pickle',
 		fig_data_bval_bins = 'results/Patterson2022/fig_data_Patterson_bval_bins.pickle',
+		used_snps = 'results/Patterson2022/used_snps_Patterson2022.tsv',
 	conda:
 		"../envs/py-env.yaml"
 	script:
@@ -26,6 +27,7 @@ rule analysis_papac:
 		fig_bins_var = 'results/Papac2021/fig_Papac2021_bins_var.pdf',
 		fig_bins_totvar = 'results/Papac2021/fig_Papac2021_bins_totvar.pdf',
 		matrix_data = 'results/Papac2021/matrix_Papac2021.pickle',
+		used_snps = 'results/Papac2021/used_snps_Papac2021.tsv',
 	conda:
 		"../envs/py-env.yaml"
 	script:

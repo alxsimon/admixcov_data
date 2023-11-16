@@ -6,12 +6,18 @@ include: "workflow/rules/data_prep_Patterson2022.smk"
 include: "workflow/rules/data_prep_Papac2021.smk"
 include: "workflow/rules/smartpca.smk"
 include: "workflow/rules/analyses.smk"
+include: "workflow/rules/ascertainment.smk"
 
 rule all:
 	input:
 		"results.tar.gz",
 		rules.analysis_papac.output,
 		rules.main_figures.output,
+		expand(
+			"results/{dataset}/ascertainment_info/Rohland2022_supp_chr{chr}.txt",
+			dataset=["Patterson2022", "Papac2021"],
+			chr=range(1, 22),
+		)
 
 
 rule download_AADR:

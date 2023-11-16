@@ -9,7 +9,7 @@ rule smartpca_Patterson2022:
 		"logs/smartpca_Patterson2022_full_pca.log"
 	conda: "../envs/eigensoft.yaml"
 	threads:
-		workflow.cores
+		10
 	shell:
 		"""
 		cat << EOF > {output[3]}
@@ -41,7 +41,7 @@ rule smartpca_Patterson2022_proj:
 		"logs/smartpca_Patterson2022_proj.log"
 	conda: "../envs/eigensoft.yaml"
 	threads:
-		workflow.cores
+		10
 	shell:
 		"""
 		cat << EOF > {output[3]}

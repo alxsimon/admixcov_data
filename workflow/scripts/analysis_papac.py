@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import dask
 import pickle
+import pandas as pd
 
 rng = np.random.default_rng(982742)
 
@@ -63,6 +64,15 @@ with dask.config.set(**{'array.slicing.split_large_chunks': False}):
     ds = ds.sel(variants=kept_loci)
 report.write("\n==========\nFiltered dataset:\n")
 print(ds.dims, file=report)
+
+df_out = pd.DataFrame(
+	data={
+		'chr': ds.variant_contig.values + 1,
+		'pos': ds.variant_position.values,
+		'id': ds.variant_id.values,
+	}
+)
+df_out.to_csv(snakemake.output['used_snps'], sep='\t', index=False)
 
 times = [np.mean(ds.sample_date_bp.values[mask]) for mask in ds.mask_cohorts.values]
 report.write("\n==========\nMean times:\n")
