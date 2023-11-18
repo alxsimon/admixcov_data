@@ -15,11 +15,33 @@ rule grab_common_snps:
 		<(zcat {input.rohland_chr}) \
 		> {output.out}
 		"""
-		# """
-		# rg -N -z \
-		# -f <(awk -v chr="{wildcards.chr}" '$1==chr {{print "^"$1"\\\s"$2"\\\s"}}' {input.used_snps}) \
-		# {input.rohland_chr} \
-		# > {output.out}
-		# """
 
 
+rule Patterson2022_ascert:
+	input:
+		zarr = 'data/Patterson2022/Patterson2022.zarr',
+		ascert_info = expand(
+			"results/Patterson2022/ascertainment_info/Rohland2022_supp_chr{chr}.txt",
+			chr=range(1, 22),
+		),
+	output:
+		fig_data = 'results/Patterson2022/fig_data_Patterson2022_ascert.pickle',
+	conda:
+		"../envs/py-env.yaml"
+	script:
+		'../scripts/analysis_patterson_ascert.py'
+
+
+rule Papac2021_ascert:
+	input:
+		zarr = 'data/Papac2021/Papac2021.zarr',
+		ascert_info = expand(
+			"results/Papac2021/ascertainment_info/Rohland2022_supp_chr{chr}.txt",
+			chr=range(1, 22),
+		),
+	output:
+		fig_data = 'results/Papac2021/fig_data_Papac2021_ascert.pickle',
+	conda:
+		"../envs/py-env.yaml"
+	script:
+		'../scripts/analysis_papac_ascert.py'

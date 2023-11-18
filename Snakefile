@@ -14,9 +14,8 @@ rule all:
 		rules.analysis_papac.output,
 		rules.main_figures.output,
 		expand(
-			"results/{dataset}/ascertainment_info/Rohland2022_supp_chr{chr}.txt",
+			'results/{dataset}/fig_data_{dataset}_ascert.pickle',
 			dataset=["Patterson2022", "Papac2021"],
-			chr=range(1, 22),
 		)
 
 
