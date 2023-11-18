@@ -28,6 +28,8 @@ rule Patterson2022_ascert:
 		fig_data = 'results/Patterson2022/fig_data_Patterson2022_ascert.pickle',
 	conda:
 		"../envs/py-env.yaml"
+	resources:
+		mem = "10G"
 	script:
 		'../scripts/analysis_patterson_ascert.py'
 
@@ -43,5 +45,7 @@ rule Papac2021_ascert:
 		fig_data = 'results/Papac2021/fig_data_Papac2021_ascert.pickle',
 	conda:
 		"../envs/py-env.yaml"
+	resources:
+		mem = "10G"
 	script:
 		'../scripts/analysis_papac_ascert.py'
