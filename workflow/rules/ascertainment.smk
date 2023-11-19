@@ -49,3 +49,17 @@ rule Papac2021_ascert:
 		mem = "10G"
 	script:
 		'../scripts/analysis_papac_ascert.py'
+
+
+rule make_figures_ascert:
+	input:
+		file_data_uk_ascert = 'results/Patterson2022/fig_data_Patterson2022_ascert.pickle',
+		file_data_bo_ascert = 'results/Papac2021/fig_data_Papac2021_ascert.pickle',
+		file_data_uk = 'results/Patterson2022/fig_data_Patterson2022_main.pickle',
+		file_data_bo = 'results/Papac2021/fig_data_Papac2021_main.pickle',
+	output:
+		fig = 'results/fig_ascertainment.pdf'
+	conda:
+		"../envs/py-env.yaml"
+	script:
+		'../scripts/plot_ascertainment_split.py'

@@ -310,6 +310,7 @@ with open(snakemake.output['fig_data'], 'wb') as fw:
             'straps_G_nc': straps_G_nc,
             'straps_G_nde': straps_G_nde,
             'straps_Ap': straps_Ap,
+            'N_snp': ds.dims['variants'],
         },
         fw,
     )

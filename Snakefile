@@ -13,11 +13,7 @@ rule all:
 		"results.tar.gz",
 		rules.analysis_papac.output,
 		rules.main_figures.output,
-		expand(
-			'results/{dataset}/fig_data_{dataset}_ascert.pickle',
-			dataset=["Patterson2022", "Papac2021"],
-		)
-
+		rules.make_figures_ascert.output,
 
 rule download_AADR:
 	output:

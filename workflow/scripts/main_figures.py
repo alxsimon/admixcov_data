@@ -1,7 +1,6 @@
 import admixcov as ac
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 import pickle
 
 import matplotlib.ticker as tkr

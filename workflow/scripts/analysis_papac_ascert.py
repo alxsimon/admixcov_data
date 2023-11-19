@@ -319,6 +319,7 @@ for fp in focal_pops:
 		'straps_G_nc': straps_G_nc,
 		'straps_G_nde': straps_G_nde,
 		'straps_Ap': straps_Ap,
+		'N_snp': ds_filt.dims['variants'],
 	})
 
 
