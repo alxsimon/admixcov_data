@@ -135,10 +135,10 @@ for val, fmt, col, label in zip(
 
 axs[0].set_title("A", loc='left', fontdict={'fontweight': 'bold'})
 axs[0].set_title('UK', fontweight='bold')
-axs[0].set_ylabel("Proportion of variance")
+axs[0].set_xlabel("Proportion of variance")
 axs[1].set_title("B", loc='left', fontdict={'fontweight': 'bold'})
 axs[1].set_title('Bohemia', fontweight='bold')
-axs[1].set_ylabel("Proportion of variance")
+axs[1].set_xlabel("Proportion of variance")
 
 axs[0].vlines(x=0, ymin=0, ymax=6, linestyles='dotted', colors='grey')
 axs[1].vlines(x=0, ymin=0, ymax=6, linestyles='dotted', colors='grey')

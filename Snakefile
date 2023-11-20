@@ -10,7 +10,7 @@ include: "workflow/rules/ascertainment.smk"
 
 rule all:
 	input:
-		"results.tar.gz",
+		# "results.tar.gz",
 		rules.analysis_papac.output,
 		rules.main_figures.output,
 		rules.make_figures_ascert.output,

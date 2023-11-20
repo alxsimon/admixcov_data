@@ -3,7 +3,7 @@
 
 #SBATCH -J main_admixcov_data
 #SBATCH -A gmcoopgrp
-#SBATCH -p high2
+#SBATCH -p med2
 #SBATCH -t 10-00:00:00
 #SBATCH -o main_snakemake.out
 #SBATCH -e main_snakemake.err
@@ -15,4 +15,4 @@
 #SBATCH --mail-user acpsimon@ucdavis.edu
 
 module load miniconda3
-snakemake --profile farm-profile --rerun-triggers mtime code
+snakemake --profile farm-profile-med2
