@@ -58,13 +58,13 @@ kept_loci = (
     & np.all((ds_full.variant_count_nonmiss_ref.values > 2), axis=0)
 )
 with dask.config.set(**{'array.slicing.split_large_chunks': False}):
-    ds = ds_full.sel(variants=kept_loci)
+    ds_full = ds_full.sel(variants=kept_loci)
 
-ds['variant_chr_pos'] = (
+ds_full['variant_chr_pos'] = (
     ['variants'],
     [str(chr + 1) + "_" + str(pos) for chr, pos in zip(
-        ds.variant_contig.values,
-        ds.variant_position.values
+        ds_full.variant_contig.values,
+        ds_full.variant_position.values
     )]
 )
 
@@ -335,7 +335,7 @@ for fp in focal_pops:
         'straps_G_nc': straps_G_nc,
         'straps_G_nde': straps_G_nde,
         'straps_Ap': straps_Ap,
-        'N_snp': ds_filt.dims['variants'],
+        'N_snp': ds.dims['variants'],
     })
 
 

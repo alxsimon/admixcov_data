@@ -13,6 +13,8 @@ rule analysis_patterson:
 		used_snps = 'results/Patterson2022/used_snps_Patterson2022.tsv',
 	conda:
 		"../envs/py-env.yaml"
+	resources:
+		mem = "10G"
 	script:
 		'../scripts/analysis_patterson.py'
 
@@ -30,6 +32,8 @@ rule analysis_papac:
 		used_snps = 'results/Papac2021/used_snps_Papac2021.tsv',
 	conda:
 		"../envs/py-env.yaml"
+	resources:
+		mem = "10G"
 	script:
 		'../scripts/analysis_papac.py'
 
@@ -62,5 +66,7 @@ rule analysis_patterson_split:
 		matrix_data = 'results/Patterson2022_split/matrix_Patterson2022_split.pickle',
 	conda:
 		"../envs/py-env.yaml"
+	resources:
+		mem = "10G"
 	script:
 		'../scripts/analysis_patterson_split.py'
