@@ -321,6 +321,13 @@ axs[0].hlines(y=0, xmin=0, xmax=4, color='black', linestyles='dotted')
 axs[0].xaxis.set_major_locator(loc)
 axs[0].yaxis.set_major_formatter(formatter)
 
+axs[0].annotate(
+    "low rec.", (0,0), (0, -10), xycoords='axes fraction', textcoords='offset points', va='top',
+)
+axs[0].annotate(
+    "high rec.", (1,0), (0, -10), xycoords='axes fraction', textcoords='offset points', va='top',
+)
+
 # sum cov
 ac.plot_ci_line(
     np.unique(bins_uk['bins']) + 0.1,
@@ -351,5 +358,12 @@ axs[1].set_title("B", loc='left', fontdict={'fontweight': 'bold'})
 axs[1].xaxis.set_major_locator(loc)
 axs[1].yaxis.set_major_formatter(formatter)
 axs[1].legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=3, title='$\Delta p_t$')
+
+axs[1].annotate(
+    "low rec.", (0,0), (0, -10), xycoords='axes fraction', textcoords='offset points', va='top',
+)
+axs[1].annotate(
+    "high rec.", (1,0), (0, -10), xycoords='axes fraction', textcoords='offset points', va='top',
+)
 
 fig.savefig(snakemake.output['fig_data_uk_bval'])
